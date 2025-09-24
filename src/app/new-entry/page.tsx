@@ -43,10 +43,11 @@ export default function NewEntry() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [mood, setMood] = useState('Sad');
 
   useEffect(() => {
+    setCurrentDate(new Date());
     const timer = setInterval(() => setCurrentDate(new Date()), 60000); // Update time every minute
     return () => clearInterval(timer);
   }, []);
@@ -113,7 +114,7 @@ export default function NewEntry() {
                   className="rounded-full bg-white border-gray-200"
                 >
                   <Clock className="w-4 h-4 mr-2" />
-                  {format(currentDate, 'MMM d, h:mm a')}
+                  {currentDate ? format(currentDate, 'MMM d, h:mm a') : 'Loading...'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent>Date/Time Picker placeholder</PopoverContent>
