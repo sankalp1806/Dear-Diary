@@ -17,8 +17,23 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 // Mock data for moods. In a real app, this would come from daily sentiment analysis.
+// Let's assume some days have entries and some don't.
+const mockEntries: { [key: string]: { mood: string } } = {
+  [format(new Date(), 'yyyy-MM-dd')]: { mood: '😊' }, // Today
+  [format(subMonths(new Date(), 0).setDate(15), 'yyyy-MM-dd')]: { mood: '🙂' },
+  [format(subMonths(new Date(), 0).setDate(3), 'yyyy-MM-dd')]: { mood: '😐' },
+  [format(subMonths(new Date(), 0).setDate(21), 'yyyy-MM-dd')]: { mood: '😟' },
+};
+
+
 const getMockMoodForDate = (date: Date) => {
-  const day = date.getDate();
+  const dateString = format(date, 'yyyy-MM-dd');
+  const entry = mockEntries[dateString];
+
+  if (!entry) {
+    return null; // No entry for this date
+  }
+
   const moods = ['😊', '🙂', '😐', '😟', '😠'];
   const colors = [
     'bg-yellow-300', // Happy
@@ -27,10 +42,10 @@ const getMockMoodForDate = (date: Date) => {
     'bg-teal-500', // Anxious
     'bg-slate-500', // Angry
   ];
-  const moodIndex = (day * 3 + 5) % 5;
+  const moodIndex = moods.indexOf(entry.mood);
   return {
-    emoji: moods[moodIndex],
-    color: colors[moodIndex],
+    emoji: entry.mood,
+    color: colors[moodIndex] || colors[2],
   };
 };
 
@@ -108,15 +123,18 @@ export default function Dashboard() {
           
           {daysInMonth.map(day => {
             const mood = getMockMoodForDate(day);
+            const hasEntry = !!mood;
+            const linkHref = hasEntry ? `/timeline?date=${format(day, 'yyyy-MM-dd')}` : '/new-entry';
+
             return (
-              <Link href="/new-entry" key={day.toString()} passHref>
+              <Link href={linkHref} key={day.toString()} passHref>
                 <div className="flex flex-col items-center cursor-pointer">
-                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", mood.color)}>
-                    <MoodEmoji mood={mood.emoji} />
+                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", mood ? mood.color : 'bg-gray-200')}>
+                    {mood && <MoodEmoji mood={mood.emoji} />}
                   </div>
                   <span className={cn(
                     "mt-2 text-sm",
-                     isToday(day) ? 'bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center' : ''
+                     isClient && isToday(day) ? 'bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center' : ''
                   )}>
                     {format(day, 'd')}
                   </span>
