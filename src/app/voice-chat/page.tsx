@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Bell, X, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const AudioWaveform = ({ isRecording }: { isRecording: boolean }) => {
   const barCount = 30;
@@ -47,6 +48,7 @@ const AudioWaveform = ({ isRecording }: { isRecording: boolean }) => {
 
 export default function VoiceChatPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -80,6 +82,13 @@ export default function VoiceChatPage() {
 
       recognitionRef.current.onerror = (event: any) => {
         console.error('Speech recognition error', event.error);
+        if (event.error === 'network') {
+            toast({
+                variant: 'destructive',
+                title: 'Network Error',
+                description: 'Speech recognition service is unavailable. Please check your network connection.',
+            });
+        }
         stopRecording();
       };
       
@@ -87,8 +96,14 @@ export default function VoiceChatPage() {
     } else {
       console.warn('Speech Recognition not supported in this browser.');
       setTranscript("Sorry, your browser doesn't support voice recognition.");
+       toast({
+        variant: 'destructive',
+        title: 'Unsupported Browser',
+        description: "Your browser doesn't support voice recognition.",
+      });
     }
 
+    setElapsedTime(0);
     timerRef.current = setInterval(() => {
       setElapsedTime((prev) => prev + 1);
     }, 1000);
@@ -121,7 +136,7 @@ export default function VoiceChatPage() {
   const handleSave = () => {
     // Navigate back and pass the transcript. A more robust solution would use a state manager.
     // For now we use local storage as a simple bridge.
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && transcript) {
         localStorage.setItem('voice-transcript', transcript);
     }
     stopRecording();
@@ -181,7 +196,7 @@ export default function VoiceChatPage() {
               className="bg-[#FF6B6B] text-white rounded-full w-20 h-20 shadow-lg hover:bg-[#ff4f4f]"
               onClick={handleToggleRecording}
             >
-              <div className="w-8 h-8 bg-white rounded-md" style={{ borderRadius: isRecording ? '4px' : '8px', transition: 'border-radius 0.2s ease-in-out' }}/>
+              <div className="w-8 h-8 bg-white" style={{ borderRadius: isRecording ? '4px' : '9999px', transition: 'border-radius 0.2s ease-in-out' }}/>
             </Button>
             
             <Button
@@ -189,6 +204,7 @@ export default function VoiceChatPage() {
               size="icon"
               className="absolute right-4 text-green-500 rounded-full w-14 h-14"
               onClick={handleSave}
+              disabled={!transcript && !isRecording}
             >
               <Check className="w-8 h-8" />
             </Button>
