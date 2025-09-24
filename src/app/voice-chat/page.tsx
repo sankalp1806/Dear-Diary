@@ -158,7 +158,7 @@ export default function VoiceChatPage() {
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="w-7 h-7" />
           </Button>
-          <h1 className="text-lg font-semibold">Add Audio Journal</h1>
+          <h1 className="text-lg font-semibold">I'm All Ears...</h1>
           <Button variant="ghost" size="icon">
             <Bell className="w-6 h-6" />
           </Button>

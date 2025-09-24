@@ -1,224 +1,124 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import React, { useState } from 'react';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  getDay,
+  isToday,
+  isSameMonth,
+  addMonths,
+  subMonths,
+} from 'date-fns';
+import { ChevronDown, ArrowUpFromLine, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Calendar,
-  Menu,
-  Search,
-  Share2,
-  Mic,
-  Image,
-  Paperclip,
-  BookOpen,
-} from 'lucide-react';
-import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
-const moods = {
-  1: { emoji: '😔', label: 'Apathetic' },
-  2: { emoji: '😠', label: 'Angry' },
-  3: { emoji: '😟', label: 'Anxious' },
-  4: { emoji: '😐', label: 'Neutral' },
-  5: { emoji: '🙂', label: 'Calm' },
-  6: { emoji: '😊', label: 'Happy' },
-  7: { emoji: '😃', label: 'Excited' },
-  8: { emoji: '😍', label: 'Grateful' },
+// Mock data for moods. In a real app, this would come from daily sentiment analysis.
+const getMockMoodForDate = (date: Date) => {
+  const day = date.getDate();
+  const moods = ['😊', '🙂', '😐', '😟', '😠'];
+  const colors = [
+    'bg-yellow-300', // Happy
+    'bg-lime-300', // Calm
+    'bg-green-400', // Neutral
+    'bg-teal-500', // Anxious
+    'bg-slate-500', // Angry
+  ];
+  const moodIndex = (day * 3 + 5) % 5;
+  return {
+    emoji: moods[moodIndex],
+    color: colors[moodIndex],
+  };
 };
 
-const EntryItem = ({ entry }: { entry: any }) => {
-  const mood = entry.mood_score ? moods[entry.mood_score] || moods[1] : null;
-  const isMoodMark = !entry.content && mood;
+const MoodEmoji = ({ mood }: { mood: string }) => {
+    switch (mood) {
+        case '😊': return <div className='w-full h-full rounded-full flex items-center justify-center text-black text-2xl font-bold'>:D</div>;
+        case '🙂': return <div className='w-full h-full rounded-full flex items-center justify-center text-black text-xl'><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 14C8.5 15.5 10.5 16.5 12 16.5C13.5 16.5 15.5 15.5 16 14" stroke="black" strokeWidth="2" strokeLinecap="round"/><path d="M9 9.5C9 10.0523 8.55228 10.5 8 10.5C7.44772 10.5 7 10.0523 7 9.5C7 8.94772 7.44772 8.5 8 8.5C8.55228 8.5 9 8.94772 9 9.5Z" fill="black"/><path d="M15 9.5C15 10.0523 14.5523 10.5 14 10.5C13.4477 10.5 13 10.0523 13 9.5C13 8.94772 13.4477 8.5 14 8.5C14.5523 8.5 15 8.94772 15 9.5Z" fill="black"/></svg></div>;
+        case '😐': return <div className='w-full h-full rounded-full flex items-center justify-center text-black text-xl'><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 14H16" stroke="black" strokeWidth="2" strokeLinecap="round"/><path d="M9 9.5C9 10.0523 8.55228 10.5 8 10.5C7.44772 10.5 7 10.0523 7 9.5C7 8.94772 7.44772 8.5 8 8.5C8.55228 8.5 9 8.94772 9 9.5Z" fill="black"/><path d="M15 9.5C15 10.0523 14.5523 10.5 14 10.5C13.4477 10.5 13 10.0523 13 9.5C13 8.94772 13.4477 8.5 14 8.5C14.5523 8.5 15 8.94772 15 9.5Z" fill="black"/></svg></div>;
+        case '😟': return <div className='w-full h-full rounded-full flex items-center justify-center text-black text-xl'><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 15C8.5 13.5 10.5 12.5 12 12.5C13.5 12.5 15.5 13.5 16 15" stroke="black" strokeWidth="2" strokeLinecap="round"/><path d="M9 9.5C9 10.0523 8.55228 10.5 8 10.5C7.44772 10.5 7 10.0523 7 9.5C7 8.94772 7.44772 8.5 8 8.5C8.55228 8.5 9 8.94772 9 9.5Z" fill="black"/><path d="M15 9.5C15 10.0523 14.5523 10.5 14 10.5C13.4477 10.5 13 10.0523 13 9.5C13 8.94772 13.4477 8.5 14 8.5C14.5523 8.5 15 8.94772 15 9.5Z" fill="black"/></svg></div>;
+        case '😠': return <div className='w-full h-full rounded-full flex items-center justify-center text-black text-xl'><svg width="24" height="24" viewBox="uncal24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 16C8.5 14.5 10.5 13.5 12 13.5C13.5 13.5 15.5 14.5 16 16" stroke="black" strokeWidth="2" strokeLinecap="round" transform="translate(0, -2)"/><path d="M9.5 10C9.5 10.5523 9.05228 11 8.5 11C7.94772 11 7.5 10.5523 7.5 10" stroke="black" strokeWidth="1.5" transform="rotate(20 9.5 10)"/><path d="M14.5 10C14.5 10.5523 14.0523 11 13.5 11C12.9477 11 12.5 10.5523 12.5 10" stroke="black" strokeWidth="1.5" transform="rotate(-20 14.5 10)"/></svg></div>;
+        default: return null;
+    }
+}
 
-  return (
-    <div className="flex gap-4">
-      <div className="flex flex-col items-center">
-        <span className="text-sm text-gray-500">
-          {format(new Date(entry.entry_date), 'HH:mm')}
-        </span>
-        <div className="w-px flex-1 bg-gray-200 my-2"></div>
-        <Share2 className="w-4 h-4 text-gray-400" />
-        <div className="w-px flex-1 bg-gray-200 mt-2"></div>
-      </div>
-      <div className="flex-1 pb-8">
-        {isMoodMark ? (
-          <p className="text-gray-600">
-            You marked that you felt{' '}
-            <span className="inline-flex items-center bg-gray-100 rounded-full px-3 py-1 text-sm">
-              {mood.emoji} {mood.label}
-            </span>
-          </p>
-        ) : (
-          <>
-            {entry.title !== 'Untitled' && (
-              <h3 className="font-semibold text-gray-800 mb-1">
-                {entry.title}
-              </h3>
-            )}
-            <p className="text-gray-600 whitespace-pre-wrap">{entry.content}</p>
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
 
 export default function Dashboard() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  const [entries, setEntries] = useState([]);
-  const [filteredEntries, setFilteredEntries] = useState([]);
-  const [activeFilter, setActiveFilter] = useState('All today');
-  const [isLoading, setIsLoading] = useState(true);
+  const firstDayOfMonth = startOfMonth(currentDate);
+  const lastDayOfMonth = endOfMonth(currentDate);
+  const daysInMonth = eachDayOfInterval({
+    start: firstDayOfMonth,
+    end: lastDayOfMonth,
+  });
+  const startingDayIndex = getDay(firstDayOfMonth);
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // This is a placeholder since there is no data layer
-  const loadEntries = useCallback(async () => {
-    setIsLoading(true);
-    const data: any[] = [];
-    setEntries(data);
-    setFilteredEntries(data); // Initially show all
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    loadEntries();
-  }, [loadEntries]);
-
-  const handleFilterChange = (filter: string) => {
-    setActiveFilter(filter);
-    if (filter === 'All today') {
-      setFilteredEntries(entries);
-    } else if (filter === 'Notes') {
-      setFilteredEntries(entries.filter((e: any) => e.content));
-    } else if (filter === 'Marks' || filter === 'Mood') {
-      setFilteredEntries(entries.filter((e: any) => !e.content && e.mood_score));
-    }
-  };
-
-  const categories = [...new Set(entries.map((e: any) => e.category).filter(Boolean))];
+  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
+  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
 
   return (
-    <div className="h-screen w-full bg-gray-50 flex flex-col font-sans">
-      <header className="p-4 bg-gray-50 sticky top-0 z-10">
-        <div className="bg-black text-white rounded-2xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="bg-blue-600 w-12 h-12 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-xl font-bold">{format(new Date(), 'd')}</p>
-              <p className="text-xl">{format(new Date(), 'MMM')}</p>
-            </div>
-          </div>
-          <div className="border-l border-gray-600 pl-4 h-10 flex flex-col justify-center">
-            <p className="text-sm">{entries.length} notes</p>
-            <p className="text-sm text-gray-400">
-              {entries.filter((e: any) => e.mood_score).length} diary marks
-            </p>
-          </div>
-          <Button variant="ghost" size="icon">
-            <Menu className="w-6 h-6" />
+    <div className="h-screen w-full bg-[#F3F7F2] flex flex-col font-sans text-gray-700">
+      <header className="p-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={prevMonth} size="icon">
+            <ChevronLeft />
+          </Button>
+          <Button variant="ghost" className="text-xl font-semibold">
+            {format(currentDate, 'MMM yyyy')} <ChevronDown className="w-5 h-5 ml-1" />
+          </Button>
+           <Button variant="ghost" onClick={nextMonth} size="icon">
+            <ChevronRight />
           </Button>
         </div>
+        <Button variant="ghost" size="icon">
+          <ArrowUpFromLine className="w-6 h-6" />
+        </Button>
       </header>
-
-      <div className="px-4 mb-4">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
-          {['All today', 'Notes', 'Marks', 'Mood'].map((filter) => (
-            <Button
-              key={filter}
-              onClick={() => handleFilterChange(filter)}
-              className={`rounded-full h-9 text-sm whitespace-nowrap px-4 ${
-                activeFilter === filter
-                  ? 'bg-black text-white'
-                  : 'bg-white text-black border'
-              }`}
-            >
-              {filter}
-            </Button>
+      
+      <main className="flex-1 px-4">
+        <div className="grid grid-cols-7 gap-y-2 text-center text-gray-400 text-sm mb-4">
+          {weekDays.map(day => (
+            <div key={day}>{day}</div>
           ))}
         </div>
-      </div>
-
-      <div className="px-4 mb-4 flex items-center gap-2">
-        <Select>
-          <SelectTrigger className="bg-white border rounded-lg flex-1">
-            <SelectValue placeholder="All categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          variant="outline"
-          size="icon"
-          className="bg-white border rounded-lg"
-        >
-          <Search className="w-5 h-5" />
-        </Button>
-      </div>
-
-      <main className="flex-1 overflow-y-auto px-4">
-        {isLoading ? (
-          <p className="text-center text-gray-500">Loading entries...</p>
-        ) : filteredEntries.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <BookOpen className="w-16 h-16 text-gray-300 mb-4" />
-            <h2 className="text-xl font-semibold text-gray-700">
-              Your journal is empty
-            </h2>
-            <p className="text-gray-500 mt-2">
-              Tap &apos;New note&apos; to capture what&apos;s on your mind.
-            </p>
-          </div>
-        ) : (
-          <div>
-            {filteredEntries.map((entry: any) => (
-              <EntryItem key={entry.id} entry={entry} />
-            ))}
-          </div>
-        )}
+        
+        <div className="grid grid-cols-7 gap-y-4 text-center">
+          {Array.from({ length: startingDayIndex }).map((_, index) => (
+            <div key={`empty-${index}`} />
+          ))}
+          
+          {daysInMonth.map(day => {
+            const mood = getMockMoodForDate(day);
+            return (
+              <Link href="/new-entry" key={day.toString()} passHref>
+                <div className="flex flex-col items-center cursor-pointer">
+                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", mood.color)}>
+                    <MoodEmoji mood={mood.emoji} />
+                  </div>
+                  <span className={cn(
+                    "mt-2 text-sm",
+                     isToday(day) ? 'bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center' : ''
+                  )}>
+                    {format(day, 'd')}
+                  </span>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
       </main>
 
-      <footer className="p-4 bg-gray-50 sticky bottom-0">
-        <div className="flex items-center justify-around gap-2">
-          <Button
-            size="icon"
-            className="bg-blue-600 text-white rounded-full w-12 h-12 shadow-lg"
-          >
-            <Mic className="w-6 h-6" />
-          </Button>
-          <Button
-            size="icon"
-            className="bg-white text-gray-700 rounded-full w-12 h-12 shadow-lg border"
-          >
-            <Image className="w-6 h-6" />
-          </Button>
-          <Button
-            size="icon"
-            className="bg-white text-gray-700 rounded-full w-12 h-12 shadow-lg border"
-          >
-            <Paperclip className="w-6 h-6" />
-          </Button>
+      <footer className="p-4 bg-transparent sticky bottom-0">
           <Link href="/new-entry" className="flex-1">
-            <Button className="w-full h-12 bg-blue-600 text-white rounded-full shadow-lg text-md">
+            <Button className="w-full h-14 bg-blue-600 text-white rounded-full shadow-lg text-lg">
               New note
             </Button>
           </Link>
-        </div>
       </footer>
     </div>
   );

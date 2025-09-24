@@ -47,6 +47,7 @@ export default function NewEntry() {
   const [mood, setMood] = useState('Sad');
 
   useEffect(() => {
+    // This will only run on the client, preventing a hydration mismatch.
     setCurrentDate(new Date());
     const timer = setInterval(() => setCurrentDate(new Date()), 60000); // Update time every minute
     return () => clearInterval(timer);
@@ -97,9 +98,7 @@ export default function NewEntry() {
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="w-6 h-6 text-gray-700" />
           </Button>
-          <h1 className="text-lg font-semibold text-gray-800">
-            Create New Journal
-          </h1>
+          <h1 className="text-lg font-semibold text-gray-800">What's Up??</h1>
           <Button variant="ghost" size="icon">
             <Bell className="w-6 h-6 text-gray-700" />
           </Button>
