@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   format,
   startOfMonth,
@@ -47,7 +47,21 @@ const MoodEmoji = ({ mood }: { mood: string }) => {
 
 
 export default function Dashboard() {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setCurrentDate(new Date());
+    setIsClient(true);
+  }, []);
+
+  if (!isClient || !currentDate) {
+    return (
+        <div className="h-screen w-full bg-[#F3F7F2] flex items-center justify-center">
+            {/* You can add a loading spinner here */}
+        </div>
+    );
+  }
 
   const firstDayOfMonth = startOfMonth(currentDate);
   const lastDayOfMonth = endOfMonth(currentDate);
