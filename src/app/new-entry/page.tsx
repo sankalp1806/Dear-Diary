@@ -19,32 +19,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-
-const moods = [
-  'Happy',
-  'Sad',
-  'Anxious',
-  'Excited',
-  'Calm',
-  'Angry',
-  'Grateful',
-];
 
 export default function NewEntry() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
-  const [mood, setMood] = useState('Sad');
 
   useEffect(() => {
     // This will only run on the client, preventing a hydration mismatch.
@@ -52,15 +34,17 @@ export default function NewEntry() {
     const timer = setInterval(() => setCurrentDate(new Date()), 60000); // Update time every minute
     return () => clearInterval(timer);
   }, []);
-  
+
   useEffect(() => {
     // Check for transcript from voice chat page
     if (typeof window !== 'undefined') {
-        const voiceTranscript = localStorage.getItem('voice-transcript');
-        if (voiceTranscript) {
-            setContent(prev => prev ? `${prev}\n${voiceTranscript}` : voiceTranscript);
-            localStorage.removeItem('voice-transcript');
-        }
+      const voiceTranscript = localStorage.getItem('voice-transcript');
+      if (voiceTranscript) {
+        setContent((prev) =>
+          prev ? `${prev}\n${voiceTranscript}` : voiceTranscript
+        );
+        localStorage.removeItem('voice-transcript');
+      }
     }
   }, []);
 
@@ -75,7 +59,6 @@ export default function NewEntry() {
     console.log({
       title: title || 'Untitled',
       content: content,
-      mood_score: moods.indexOf(mood) + 1,
       entry_date: new Date().toISOString(),
     });
 
@@ -113,28 +96,13 @@ export default function NewEntry() {
                   className="rounded-full bg-white border-gray-200"
                 >
                   <Clock className="w-4 h-4 mr-2" />
-                  {currentDate ? format(currentDate, 'MMM d, h:mm a') : 'Loading...'}
+                  {currentDate
+                    ? format(currentDate, 'MMM d, h:mm a')
+                    : 'Loading...'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent>Date/Time Picker placeholder</PopoverContent>
             </Popover>
-
-            <Select value={mood} onValueChange={setMood}>
-              <SelectTrigger className="rounded-full bg-white border-gray-200 w-auto">
-                <SelectValue>
-                  <div className="flex items-center gap-2">
-                    <span>{mood}</span>
-                  </div>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {moods.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="flex-1 flex flex-col">
