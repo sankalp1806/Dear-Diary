@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -48,6 +49,17 @@ export default function NewEntry() {
   useEffect(() => {
     const timer = setInterval(() => setCurrentDate(new Date()), 60000); // Update time every minute
     return () => clearInterval(timer);
+  }, []);
+  
+  useEffect(() => {
+    // Check for transcript from voice chat page
+    if (typeof window !== 'undefined') {
+        const voiceTranscript = localStorage.getItem('voice-transcript');
+        if (voiceTranscript) {
+            setContent(prev => prev ? `${prev}\n${voiceTranscript}` : voiceTranscript);
+            localStorage.removeItem('voice-transcript');
+        }
+    }
   }, []);
 
   const handleSave = async () => {
@@ -147,9 +159,11 @@ export default function NewEntry() {
             Tap to continue your journal!
           </p>
           <div className="bg-white rounded-full shadow-lg p-2 flex items-center justify-around">
-            <Button variant="ghost" size="icon" className="text-gray-600">
-              <Mic className="w-6 h-6" />
-            </Button>
+            <Link href="/voice-chat">
+              <Button variant="ghost" size="icon" className="text-gray-600">
+                <Mic className="w-6 h-6" />
+              </Button>
+            </Link>
             <div className="h-6 w-px bg-gray-200" />
             <Button variant="ghost" size="icon" className="text-gray-600">
               <Sparkles className="w-6 h-6" />
