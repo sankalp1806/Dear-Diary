@@ -99,7 +99,7 @@ const processJournalData = (entries: JournalEntry[]): InsightsData | null => {
 
   const mostFrequentEmotion = Object.keys(emotionFrequency).reduce((a, b) => emotionFrequency[a] > emotionFrequency[b] ? a : b, 'Neutral');
 
-  const endDate = new date();
+  const endDate = new Date();
   const startDate = subDays(endDate, 6);
   const dateInterval = eachDayOfInterval({ start: startDate, end: endDate });
 
