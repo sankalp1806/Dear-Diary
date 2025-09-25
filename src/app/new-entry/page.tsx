@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useActionState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,6 @@ import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { generatePromptsAction } from '@/app/actions';
-import { useFormState } from 'react-dom';
 
 export default function NewEntry() {
   const router = useRouter();
@@ -31,7 +30,7 @@ export default function NewEntry() {
   const [content, setContent] = useState('');
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
-  const [promptsState, generatePromptsFormAction] = useFormState(
+  const [promptsState, generatePromptsFormAction] = useActionState(
     generatePromptsAction,
     null
   );
