@@ -200,7 +200,7 @@ const InsightDialog = ({ trigger, title, content, onOpen }: { trigger: React.Rea
 
 
 const BalanceCard = () => (
-    <div className="bg-white/50 rounded-2xl p-4 flex justify-between items-start cursor-pointer w-full text-left">
+    <div className="bg-white/50 rounded-2xl p-4 flex justify-between items-start w-full text-left">
         <div className="flex flex-col h-full justify-between">
             <div>
                 <h3 className="text-2xl font-bold">The balance</h3>
@@ -224,7 +224,7 @@ const BalanceCard = () => (
 );
 
 const TriggerCard = ({ title, character }: { title: string, character: React.ReactNode }) => (
-    <div className="bg-white/50 rounded-2xl p-4 flex flex-col justify-between h-48 cursor-pointer w-full h-full text-left">
+    <div className="bg-white/50 rounded-2xl p-4 flex flex-col justify-between h-48 h-full w-full text-left">
         <div>
             <h3 className="text-lg font-bold">{title}</h3>
         </div>
@@ -392,11 +392,11 @@ export default function InsightsPage() {
                                     <BalanceCard />
                                 </button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="max-h-[80vh] flex flex-col">
                                 <DialogHeader>
                                     <DialogTitle>The Balance of Life Today</DialogTitle>
                                 </DialogHeader>
-                                <div>
+                                <div className="overflow-y-auto">
                                 {isLoadingInsight ? (
                                     <p>Loading insight...</p>
                                 ) : (
@@ -433,11 +433,11 @@ export default function InsightsPage() {
                                         />
                                     </button>
                                 </DialogTrigger>
-                                <DialogContent>
+                                <DialogContent className="max-h-[80vh] flex flex-col">
                                     <DialogHeader>
                                         <DialogTitle>Your Source of Negativity</DialogTitle>
                                     </DialogHeader>
-                                    <div>
+                                    <div className="overflow-y-auto">
                                         {isLoadingInsight ? <p>Loading insight...</p> : 
                                         <ul className="list-disc pl-5 space-y-2">
                                             {negativityInsight.map((item, index) => <li key={index}>{item}</li>)}
@@ -462,11 +462,11 @@ export default function InsightsPage() {
                                         />
                                     </button>
                                 </DialogTrigger>
-                                <DialogContent>
+                                <DialogContent className="max-h-[80vh] flex flex-col">
                                     <DialogHeader>
                                         <DialogTitle>Triggers of Bad Moods</DialogTitle>
                                     </DialogHeader>
-                                    <div>
+                                    <div className="overflow-y-auto">
                                         {isLoadingInsight ? <p>Loading insight...</p> : 
                                         <ul className="list-disc pl-5 space-y-2">
                                             {triggersInsight.map((item, index) => <li key={index}>{item}</li>)}
