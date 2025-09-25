@@ -38,7 +38,7 @@ const emotionToMood = (emotion?: string) => {
         return { emoji: '😌', color: '' };
     case 'loving':
     case 'romantic':
-        return { emoji: '❤️', color: '' };
+        return { emoji: '🥰', color: '' };
     case 'amused':
         return { emoji: '😂', color: '' };
     case 'joyful':
@@ -75,10 +75,9 @@ const emotionToMood = (emotion?: string) => {
 
 const MoodEmoji = ({ mood }: { mood: string }) => {
   const emojiStyle: React.CSSProperties = {
-    width: '100%',
-    height: '100%',
     fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif',
-    fontSize: '56px', // Adjusted for better fit
+    fontSize: '32px', // Adjusted for better fit
+    lineHeight: '1',
   };
 
   return (
