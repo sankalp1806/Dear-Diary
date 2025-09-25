@@ -8,12 +8,11 @@ import {
   Menu,
   BookOpen,
   ChevronRight,
-  FileText,
   Trash2,
   Pencil,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const moods: { [key: number]: { emoji: string; label: string; color: string } } = {
   1: { emoji: '😔', label: 'Apathetic', color: 'bg-indigo-100' },
@@ -35,7 +34,6 @@ const mockJournalEntries = [
 
 const EntryItem = ({ entry }: { entry: any }) => {
   const mood = entry.mood_score ? moods[entry.mood_score] || moods[4] : moods[4];
-  const wordCount = entry.content.split(/\s+/).length + entry.title.split(/\s+/).length;
 
   return (
     <div className="flex gap-4 items-start relative">
@@ -46,42 +44,41 @@ const EntryItem = ({ entry }: { entry: any }) => {
         <div className="w-px flex-1 bg-gray-200 my-2"></div>
       </div>
       <div className="flex-1 overflow-hidden">
-        <motion.div
+        <div className="relative">
+          <motion.div
             drag="x"
             dragConstraints={{ left: -128, right: 0 }}
             dragElastic={0.2}
-            className="relative"
+            className="relative z-10 bg-white rounded-xl shadow-sm w-full transition-shadow duration-300 hover:shadow-md"
+            whileHover={{ scale: 1.02 }}
           >
-          <div className="bg-white rounded-xl p-4 shadow-sm w-full">
-            <div className="flex items-start gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${mood.color}`}>
-                {mood.emoji}
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-800">{entry.title}</h3>
-                <p className="text-sm text-gray-500 truncate">{entry.content}</p>
-                <div className="flex items-center gap-2 text-xs text-gray-400 mt-2">
-                  <FileText className="w-3 h-3" />
-                  <span>{wordCount} total words</span>
+            <div className=" p-4">
+              <div className="flex items-start gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${mood.color}`}>
+                  {mood.emoji}
                 </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-gray-800">{entry.title}</h3>
+                  <p className="text-sm text-gray-500 truncate">{entry.content}</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-300 self-center" />
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-300 self-center" />
+            </div>
+          </motion.div>
+          <div
+            className="absolute right-0 top-0 bottom-0 flex items-center pr-4"
+          >
+            <div className="flex items-center gap-2">
+                <Button size="icon" className="bg-yellow-400 text-white rounded-full w-12 h-12 shadow-lg">
+                    <Pencil className="w-6 h-6" />
+                </Button>
+                <Button size="icon" className="bg-red-500 text-white rounded-full w-12 h-12 shadow-lg">
+                    <Trash2 className="w-6 h-6" />
+                </Button>
             </div>
           </div>
-        </motion.div>
-      </div>
-      <motion.div
-        className="absolute right-0 top-0 bottom-0 flex items-center"
-      >
-        <div className="flex items-center gap-2 pr-4">
-            <Button size="icon" className="bg-yellow-500 text-white rounded-full w-12 h-12 shadow-lg">
-                <Pencil className="w-6 h-6" />
-            </Button>
-            <Button size="icon" className="bg-red-500 text-white rounded-full w-12 h-12 shadow-lg">
-                <Trash2 className="w-6 h-6" />
-            </Button>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };
@@ -147,7 +144,7 @@ export default function TimelinePage() {
           </div>
         ) : (
           <div className='relative'>
-             <div className="absolute left-7 top-0 bottom-0 w-px bg-gray-200"></div>
+             <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200"></div>
               <div className="space-y-6">
                 {entries.map((entry) => (
                   <EntryItem key={entry.id} entry={entry} />
