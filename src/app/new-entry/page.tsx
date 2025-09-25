@@ -46,8 +46,7 @@ export default function NewEntry() {
     initialDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
     setEntryDate(initialDate);
 
-    const timer = setInterval(() => setEntryDate(new Date()), 60000);
-    return () => clearInterval(timer);
+    // No need for a timer to update the date every minute for a new entry
   }, [searchParams]);
 
   useEffect(() => {
