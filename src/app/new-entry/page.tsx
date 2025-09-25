@@ -26,6 +26,7 @@ export default function NewEntry() {
   const [content, setContent] = useState('');
   const [entryDate, setEntryDate] = useState<Date>(new Date());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isClient, setIsClient] = useState(false);
 
   const [promptsState, generatePromptsFormAction] = useActionState(
     generatePromptsAction,
@@ -33,6 +34,7 @@ export default function NewEntry() {
   );
 
   useEffect(() => {
+    setIsClient(true);
     const dateStr = searchParams.get('date');
     let initialDate = new Date();
     if (dateStr) {
@@ -171,7 +173,7 @@ export default function NewEntry() {
 
   return (
     <div className="h-screen w-full bg-[#F8F5F2] flex flex-col font-sans">
-      <div className="w-full max-w-2xl mx-auto flex flex-col flex-1 h-full">
+      <div className="w-full max-w-2xl mx-auto flex flex-col flex-1">
         <div className="absolute top-0 left-0 right-0 h-1 bg-green-200">
           <motion.div
             className="h-full bg-green-500"
@@ -196,7 +198,7 @@ export default function NewEntry() {
               className="rounded-full bg-white border-gray-200"
             >
               <Clock className="w-4 h-4 mr-2" />
-              {entryDate
+              {isClient && entryDate
                 ? format(entryDate, 'MMM d, h:mm a')
                 : 'Loading...'}
             </Button>
