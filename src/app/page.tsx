@@ -47,7 +47,7 @@ export default function Landing() {
   return (
     <div className="h-screen w-full relative overflow-hidden bg-gradient-to-br from-amber-100 via-orange-200 to-blue-200">
       <motion.div
-        className="h-full w-full flex flex-col items-center justify-center text-center cursor-grab"
+        className="h-full w-full absolute top-0 left-0 cursor-grab"
         style={{ y }}
         drag="y"
         dragConstraints={dragConstraints}
@@ -56,6 +56,9 @@ export default function Landing() {
         whileTap={{ cursor: 'grabbing' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       >
+        <div className="h-full w-full" />
+      </motion.div>
+      <div className="h-full w-full flex flex-col items-center justify-center text-center pointer-events-none">
         <div className="flex-1 flex flex-col items-center justify-center w-full">
           {/* Animated Title */}
           <div className="h-24 flex items-center justify-center">
@@ -113,7 +116,7 @@ export default function Landing() {
             </p>
           </motion.div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
