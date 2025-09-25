@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { categorizeJournalEntry } from '@/ai/flows/categorize-journal-entries';
 import { provideEmotionalInsights } from '@/ai/flows/provide-emotional-insights';
 import { generateSelfReflectionPrompts } from '@/ai/flows/generate-self-reflection-prompts';
+import { getBalanceOfLifeInsight } from '@/ai/flows/get-balance-of-life-insight';
+import { getNegativeSourceInsight } from '@/ai/flows/get-negative-source-insight';
+import { getBadMoodTriggersInsight } from '@/ai/flows/get-bad-mood-triggers-insight';
 import type { AnalysisState, PromptsState } from '@/lib/types';
 
 const journalEntrySchema = z.object({
@@ -93,5 +96,35 @@ export async function getSentimentForEntry(entryText: string) {
         console.error("Error getting sentiment:", error);
         // Return neutral sentiment as a fallback
         return { overallSentiment: 'neutral' };
+    }
+}
+
+export async function getBalanceInsightAction(journalEntries: string) {
+    try {
+        const result = await getBalanceOfLifeInsight({ journalEntries });
+        return { success: true, data: result.insight };
+    } catch (error) {
+        console.error("Error in getBalanceInsightAction:", error);
+        return { success: false, error: "Failed to generate balance insight." };
+    }
+}
+
+export async function getNegativityInsightAction(journalEntries: string) {
+    try {
+        const result = await getNegativeSourceInsight({ journalEntries });
+        return { success: true, data: result.sources };
+    } catch (error) {
+        console.error("Error in getNegativityInsightAction:", error);
+        return { success: false, error: "Failed to generate negativity insight." };
+    }
+}
+
+export async function getTriggersInsightAction(journalEntries: string) {
+    try {
+        const result = await getBadMoodTriggersInsight({ journalEntries });
+        return { success: true, data: result.triggers };
+    } catch (error) {
+        console.error("Error in getTriggersInsightAction:", error);
+        return { success: false, error: "Failed to generate mood triggers insight." };
     }
 }

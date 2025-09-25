@@ -18,6 +18,14 @@ import { Progress } from '@/components/ui/progress';
 import { Bell, Book, Plus, Smile, Meh, Frown, Angry, SmilePlus, BookOpen, Minus, Eye, Hourglass, ArrowUpRight } from 'lucide-react';
 import NavFooter from '@/components/shared/footer';
 import Link from 'next/link';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { getBalanceInsightAction, getNegativityInsightAction, getTriggersInsightAction } from '@/app/actions';
 
 interface JournalEntry {
   id: string;
@@ -174,8 +182,23 @@ const StatCard = ({ value, label, icon, color, progress }: { value: number; labe
   );
 };
 
+const InsightDialog = ({ trigger, title, content, onOpen }: { trigger: React.ReactNode, title: string, content: React.ReactNode, onOpen: () => void }) => (
+    <Dialog onOpenChange={(open) => open && onOpen()}>
+        <DialogTrigger asChild>
+            {trigger}
+        </DialogTrigger>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>{title}</DialogTitle>
+            </DialogHeader>
+            <div>{content}</div>
+        </DialogContent>
+    </Dialog>
+);
+
+
 const BalanceCard = () => (
-    <div className="bg-white/50 rounded-2xl p-4 flex justify-between items-start">
+    <div className="bg-white/50 rounded-2xl p-4 flex justify-between items-start cursor-pointer">
         <div className="flex flex-col h-full justify-between">
             <div>
                 <h3 className="text-2xl font-bold">The balance</h3>
@@ -199,7 +222,7 @@ const BalanceCard = () => (
 );
 
 const TriggerCard = ({ title, character }: { title: string, character: React.ReactNode }) => (
-    <div className="bg-white/50 rounded-2xl p-4 flex flex-col justify-between h-48">
+    <div className="bg-white/50 rounded-2xl p-4 flex flex-col justify-between h-48 cursor-pointer">
         <div>
             <h3 className="text-lg font-bold">{title}</h3>
         </div>
@@ -219,13 +242,38 @@ const TriggerCard = ({ title, character }: { title: string, character: React.Rea
 export default function InsightsPage() {
     const [insights, setInsights] = useState<InsightsData | null>(null);
     const [isClient, setIsClient] = useState(false);
+    const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+
+    const [balanceInsight, setBalanceInsight] = useState<string>('');
+    const [negativityInsight, setNegativityInsight] = useState<string[]>([]);
+    const [triggersInsight, setTriggersInsight] = useState<string[]>([]);
+    const [isLoadingInsight, setIsLoadingInsight] = useState(false);
+
 
     useEffect(() => {
       setIsClient(true);
       const storedEntriesJson = localStorage.getItem('journalEntries');
       const entries: JournalEntry[] = storedEntriesJson ? JSON.parse(storedEntriesJson) : [];
+      setJournalEntries(entries);
       setInsights(processJournalData(entries));
     }, []);
+
+    const fetchInsight = async (type: 'balance' | 'negativity' | 'triggers') => {
+        setIsLoadingInsight(true);
+        const entriesJson = JSON.stringify(journalEntries);
+        let result;
+        if (type === 'balance') {
+            result = await getBalanceInsightAction(entriesJson);
+            if (result.success) setBalanceInsight(result.data || '');
+        } else if (type === 'negativity') {
+            result = await getNegativityInsightAction(entriesJson);
+            if (result.success) setNegativityInsight(result.data || []);
+        } else if (type === 'triggers') {
+            result = await getTriggersInsightAction(entriesJson);
+            if (result.success) setTriggersInsight(result.data || []);
+        }
+        setIsLoadingInsight(false);
+    };
 
     const sortedEmotions = Object.entries(insights?.emotionFrequency || {})
         .sort(([, a], [, b]) => b - a)
@@ -336,28 +384,53 @@ export default function InsightsPage() {
                     </section>
 
                     <section className="space-y-4">
-                        <BalanceCard />
+                        <InsightDialog
+                            trigger={<BalanceCard />}
+                            title="The Balance of Life Today"
+                            onOpen={() => fetchInsight('balance')}
+                            content={isLoadingInsight ? <p>Loading insight...</p> : <p>{balanceInsight}</p>}
+                        />
                         <div className="grid grid-cols-2 gap-4">
-                           <TriggerCard 
-                                title="Your source of negativity" 
-                                character={
-                                     <svg width="80" height="80" viewBox="0 0 100 100">
-                                        <path d="M 85.3,63.2 C 94.6,47.4 89.2,27.5 73.4,18.2 C 57.6,8.9 37.7,14.3 28.4,30.1 C 19.1,45.9 24.5,65.8 40.3,75.1 C 56.1,84.4 76,79 85.3,63.2 Z" fill="#A5B4FC"></path>
-                                        <rect x="40" y="55" width="30" height="5" fill="black" />
-                                        <rect x="40" y="45" width="10" height="5" fill="black" />
-                                        <rect x="60" y="45" width="10" height="5" fill="black" />
-                                    </svg>
+                           <InsightDialog
+                                trigger={<TriggerCard 
+                                    title="Your source of negativity" 
+                                    character={
+                                         <svg width="80" height="80" viewBox="0 0 100 100">
+                                            <path d="M 85.3,63.2 C 94.6,47.4 89.2,27.5 73.4,18.2 C 57.6,8.9 37.7,14.3 28.4,30.1 C 19.1,45.9 24.5,65.8 40.3,75.1 C 56.1,84.4 76,79 85.3,63.2 Z" fill="#A5B4FC"></path>
+                                            <rect x="40" y="55" width="30" height="5" fill="black" />
+                                            <rect x="40" y="45" width="10" height="5" fill="black" />
+                                            <rect x="60" y="45" width="10" height="5" fill="black" />
+                                        </svg>
+                                    }
+                                />}
+                                title="Your Source of Negativity"
+                                onOpen={() => fetchInsight('negativity')}
+                                content={
+                                    isLoadingInsight ? <p>Loading insight...</p> : 
+                                    <ul className="list-disc pl-5 space-y-2">
+                                        {negativityInsight.map((item, index) => <li key={index}>{item}</li>)}
+                                    </ul>
                                 }
                             />
-                             <TriggerCard 
-                                title="Triggers of bad moods" 
-                                character={
-                                     <svg width="80" height="80" viewBox="0 0 100 100">
-                                        <path d="M 85.3,63.2 C 94.6,47.4 89.2,27.5 73.4,18.2 C 57.6,8.9 37.7,14.3 28.4,30.1 C 19.1,45.9 24.5,65.8 40.3,75.1 C 56.1,84.4 76,79 85.3,63.2 Z" fill="#FDBA74"></path>
-                                        <path d="M 40 45 Q 45 40 50 45" stroke="black" fill="transparent" strokeWidth="3" />
-                                        <path d="M 60 45 Q 65 40 70 45" stroke="black" fill="transparent" strokeWidth="3" />
-                                        <path d="M 45 60 C 50 55, 60 55, 65 60 L 60 70 L 50 70 Z" stroke="black" fill="transparent" strokeWidth="3" />
-                                    </svg>
+                             <InsightDialog
+                                trigger={<TriggerCard 
+                                    title="Triggers of bad moods" 
+                                    character={
+                                         <svg width="80" height="80" viewBox="0 0 100 100">
+                                            <path d="M 85.3,63.2 C 94.6,47.4 89.2,27.5 73.4,18.2 C 57.6,8.9 37.7,14.3 28.4,30.1 C 19.1,45.9 24.5,65.8 40.3,75.1 C 56.1,84.4 76,79 85.3,63.2 Z" fill="#FDBA74"></path>
+                                            <path d="M 40 45 Q 45 40 50 45" stroke="black" fill="transparent" strokeWidth="3" />
+                                            <path d="M 60 45 Q 65 40 70 45" stroke="black" fill="transparent" strokeWidth="3" />
+                                            <path d="M 45 60 C 50 55, 60 55, 65 60 L 60 70 L 50 70 Z" stroke="black" fill="transparent" strokeWidth="3" />
+                                        </svg>
+                                    }
+                                />}
+                                title="Triggers of Bad Moods"
+                                onOpen={() => fetchInsight('triggers')}
+                                content={
+                                    isLoadingInsight ? <p>Loading insight...</p> : 
+                                    <ul className="list-disc pl-5 space-y-2">
+                                        {triggersInsight.map((item, index) => <li key={index}>{item}</li>)}
+                                    </ul>
                                 }
                             />
                         </div>
