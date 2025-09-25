@@ -99,7 +99,7 @@ const processJournalData = (entries: JournalEntry[]): InsightsData | null => {
 
   const mostFrequentEmotion = Object.keys(emotionFrequency).reduce((a, b) => emotionFrequency[a] > emotionFrequency[b] ? a : b, 'Neutral');
 
-  const endDate = new Date();
+  const endDate = new date();
   const startDate = subDays(endDate, 6);
   const dateInterval = eachDayOfInterval({ start: startDate, end: endDate });
 
@@ -198,45 +198,49 @@ const InsightDialog = ({ trigger, title, content, onOpen }: { trigger: React.Rea
 
 
 const BalanceCard = () => (
-    <div className="bg-white/50 rounded-2xl p-4 flex justify-between items-start cursor-pointer">
-        <div className="flex flex-col h-full justify-between">
-            <div>
-                <h3 className="text-2xl font-bold">The balance</h3>
-                <h3 className="text-2xl font-bold">of life today</h3>
+    <button className="w-full text-left">
+        <div className="bg-white/50 rounded-2xl p-4 flex justify-between items-start cursor-pointer">
+            <div className="flex flex-col h-full justify-between">
+                <div>
+                    <h3 className="text-2xl font-bold">The balance</h3>
+                    <h3 className="text-2xl font-bold">of life today</h3>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-500 mt-8 invisible">
+                    <Hourglass className="w-4 h-4" />
+                    <span>15 min</span>
+                </div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mt-8 invisible">
-                <Hourglass className="w-4 h-4" />
-                <span>15 min</span>
+            <div className="flex flex-col h-full justify-between items-end">
+                 <svg width="100" height="100" viewBox="0 0 100 100" className="mt-[-1rem]">
+                    <path d="M 85.3,63.2 C 94.6,47.4 89.2,27.5 73.4,18.2 C 57.6,8.9 37.7,14.3 28.4,30.1 C 19.1,45.9 24.5,65.8 40.3,75.1 C 56.1,84.4 76,79 85.3,63.2 Z" fill="#99F6E4"></path>
+                    <circle cx="45" cy="45" r="4" fill="white"></circle>
+                    <circle cx="65" cy="45" r="4" fill="white"></circle>
+                    <path d="M 45 60 Q 55 70 65 60" stroke="red" fill="transparent" strokeWidth="3" />
+                </svg>
+                <ArrowUpRight className="w-6 h-6 text-gray-400" />
             </div>
         </div>
-        <div className="flex flex-col h-full justify-between items-end">
-             <svg width="100" height="100" viewBox="0 0 100 100" className="mt-[-1rem]">
-                <path d="M 85.3,63.2 C 94.6,47.4 89.2,27.5 73.4,18.2 C 57.6,8.9 37.7,14.3 28.4,30.1 C 19.1,45.9 24.5,65.8 40.3,75.1 C 56.1,84.4 76,79 85.3,63.2 Z" fill="#99F6E4"></path>
-                <circle cx="45" cy="45" r="4" fill="white"></circle>
-                <circle cx="65" cy="45" r="4" fill="white"></circle>
-                <path d="M 45 60 Q 55 70 65 60" stroke="red" fill="transparent" strokeWidth="3" />
-            </svg>
-            <ArrowUpRight className="w-6 h-6 text-gray-400" />
-        </div>
-    </div>
+    </button>
 );
 
 const TriggerCard = ({ title, character }: { title: string, character: React.ReactNode }) => (
-    <div className="bg-white/50 rounded-2xl p-4 flex flex-col justify-between h-48 cursor-pointer">
-        <div>
-            <h3 className="text-lg font-bold">{title}</h3>
-        </div>
-        <div className="flex justify-center my-2">
-            {character}
-        </div>
-        <div className="flex items-center justify-between text-sm text-gray-500">
-             <div className="flex items-center gap-2 invisible">
-                <Hourglass className="w-4 h-4" />
-                <span></span>
+    <button className="w-full h-full text-left">
+        <div className="bg-white/50 rounded-2xl p-4 flex flex-col justify-between h-48 cursor-pointer">
+            <div>
+                <h3 className="text-lg font-bold">{title}</h3>
             </div>
-            <ArrowUpRight className="w-5 h-5 text-gray-400" />
+            <div className="flex justify-center my-2">
+                {character}
+            </div>
+            <div className="flex items-center justify-between text-sm text-gray-500">
+                 <div className="flex items-center gap-2 invisible">
+                    <Hourglass className="w-4 h-4" />
+                    <span></span>
+                </div>
+                <ArrowUpRight className="w-5 h-5 text-gray-400" />
+            </div>
         </div>
-    </div>
+    </button>
 );
 
 export default function InsightsPage() {
