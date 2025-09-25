@@ -11,7 +11,7 @@ import {
   addMonths,
   subMonths,
 } from 'date-fns';
-import { ArrowUpFromLine, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpFromLine, ChevronLeft, ChevronRight, Home, LineChart, Search, Compass, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -57,7 +57,7 @@ const MoodEmoji = ({ mood }: { mood: string }) => {
          <svg viewBox="0 0 128 128" style={emojiStyle}>
           <foreignObject width="128" height="128">
             <div className="flex items-center justify-center h-full">
-              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '96px' }}>😄</span>
+              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '112px' }}>😄</span>
             </div>
           </foreignObject>
         </svg>
@@ -67,7 +67,7 @@ const MoodEmoji = ({ mood }: { mood: string }) => {
         <svg viewBox="0 0 128 128" style={emojiStyle}>
           <foreignObject width="128" height="128">
             <div className="flex items-center justify-center h-full">
-              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '96px' }}>🙂</span>
+              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '112px' }}>🙂</span>
             </div>
           </foreignObject>
         </svg>
@@ -77,7 +77,7 @@ const MoodEmoji = ({ mood }: { mood: string }) => {
         <svg viewBox="0 0 128 128" style={emojiStyle}>
           <foreignObject width="128" height="128">
             <div className="flex items-center justify-center h-full">
-              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '96px' }}>😐</span>
+              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '112px' }}>😐</span>
             </div>
           </foreignObject>
         </svg>
@@ -87,7 +87,7 @@ const MoodEmoji = ({ mood }: { mood: string }) => {
         <svg viewBox="0 0 128 128" style={emojiStyle}>
           <foreignObject width="128" height="128">
             <div className="flex items-center justify-center h-full">
-              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '96px' }}>😟</span>
+              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '112px' }}>😟</span>
             </div>
           </foreignObject>
         </svg>
@@ -97,7 +97,7 @@ const MoodEmoji = ({ mood }: { mood: string }) => {
         <svg viewBox="0 0 128 128" style={emojiStyle}>
           <foreignObject width="128" height="128">
             <div className="flex items-center justify-center h-full">
-              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '96px' }}>😠</span>
+              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '112px' }}>😠</span>
             </div>
           </foreignObject>
         </svg>
@@ -107,7 +107,7 @@ const MoodEmoji = ({ mood }: { mood: string }) => {
         <svg viewBox="0 0 128 128" style={emojiStyle}>
           <foreignObject width="128" height="128">
             <div className="flex items-center justify-center h-full">
-              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '96px' }}>🙂</span>
+              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '112px' }}>🙂</span>
             </div>
           </foreignObject>
         </svg>
@@ -193,7 +193,7 @@ export default function Dashboard() {
 
   const handleShare = async () => {
     if (calendarRef.current) {
-      const canvas = await html2canvas(calendarRef.current);
+      const canvas = await html2canvas(calendarRef.current, { backgroundColor: null });
       const dataUrl = canvas.toDataURL('image/png');
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'dashboard.png', { type: blob.type });
@@ -246,8 +246,8 @@ export default function Dashboard() {
   return (
     <div
       className="h-screen w-full bg-[#F3F7F2] flex flex-col font-sans text-gray-700"
-      ref={calendarRef}
     >
+       <div ref={calendarRef} className="flex-1">
       <header className="p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={prevMonth} size="icon">
@@ -300,7 +300,7 @@ export default function Dashboard() {
               return (
                  <Link href="/new-entry" key={day.toString()} passHref>
                   <div className="flex flex-col items-center cursor-pointer">
-                    <div className={cn('w-10 h-10 rounded-full flex items-center justify-center', 'bg-gray-200')}>
+                    <div className={cn('w-12 h-12 rounded-full flex items-center justify-center', 'bg-gray-200')}>
                     </div>
                     <span
                       className={cn(
@@ -325,10 +325,10 @@ export default function Dashboard() {
 
             return (
               <Link href={linkHref} key={day.toString()} passHref>
-                <div className="flex flex-col items-center cursor-pointer">
+                <div className="flex flex-col items-center cursor-pointer transform transition-transform hover:scale-110">
                   <div
                     className={cn(
-                      'w-10 h-10 rounded-full flex items-center justify-center',
+                      'w-12 h-12 rounded-full flex items-center justify-center overflow-hidden',
                        !mood || !hasEntry ? 'bg-gray-200' : ''
                     )}
                   >
@@ -350,9 +350,37 @@ export default function Dashboard() {
           })}
         </div>
       </main>
+      </div>
 
-      <footer className="p-4 bg-transparent sticky bottom-0">
-        <Link href="/new-entry" className="flex-1"></Link>
+       <footer className="fixed bottom-4 left-4 right-4 z-50">
+        <div className="relative max-w-sm mx-auto">
+          <div className="bg-black/70 backdrop-blur-lg rounded-full p-2 flex items-center justify-around text-white">
+            <Link href="/dashboard" className="flex flex-col items-center text-xs gap-1 relative">
+              <div className="absolute top-[-4px] h-1 w-6 rounded-full bg-cyan-400"></div>
+              <Home />
+              <span>Home</span>
+            </Link>
+            <Link href="#" className="flex flex-col items-center text-xs gap-1 opacity-70">
+              <Compass />
+              <span>Explore</span>
+            </Link>
+            {/* Placeholder for the middle button */}
+            <div className="w-12 h-12"></div>
+            <Link href="#" className="flex flex-col items-center text-xs gap-1 opacity-70">
+              <LineChart />
+              <span>Insights</span>
+            </Link>
+            <Link href="/timeline" className="flex flex-col items-center text-xs gap-1 opacity-70">
+              <Search />
+              <span>History</span>
+            </Link>
+          </div>
+          <Link href="/new-entry">
+            <div className="absolute top-[-24px] left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-gradient-to-br from-cyan-400 to-purple-600 flex items-center justify-center cursor-pointer shadow-lg">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+          </Link>
+        </div>
       </footer>
     </div>
   );
