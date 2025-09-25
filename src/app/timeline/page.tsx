@@ -32,7 +32,7 @@ const mockJournalEntries = [
     { id: '3', title: "don't know wht to do anym...", content: 'Felt a bit anxious about the upcoming presentation.', mood_score: 3, entry_date: new Date(new Date().setHours(13, 0)).toISOString(), category: 'feelings' },
 ];
 
-const EntryItem = ({ entry }: { entry: any }) => {
+const EntryItem = ({ entry, onDelete, onEdit }: { entry: any, onDelete: (id: string) => void, onEdit: (id: string) => void }) => {
   const mood = entry.mood_score ? moods[entry.mood_score] || moods[4] : moods[4];
 
   return (
@@ -69,10 +69,10 @@ const EntryItem = ({ entry }: { entry: any }) => {
             className="absolute right-0 top-0 bottom-0 flex items-center pr-4"
           >
             <div className="flex items-center gap-2">
-                <Button size="icon" className="bg-yellow-400 text-white rounded-full w-12 h-12 shadow-lg">
+                <Button size="icon" className="bg-yellow-400 text-white rounded-full w-12 h-12 shadow-lg" onClick={() => onEdit(entry.id)}>
                     <Pencil className="w-6 h-6" />
                 </Button>
-                <Button size="icon" className="bg-red-500 text-white rounded-full w-12 h-12 shadow-lg">
+                <Button size="icon" className="bg-red-500 text-white rounded-full w-12 h-12 shadow-lg" onClick={() => onDelete(entry.id)}>
                     <Trash2 className="w-6 h-6" />
                 </Button>
             </div>
@@ -85,6 +85,7 @@ const EntryItem = ({ entry }: { entry: any }) => {
 
 
 export default function TimelinePage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const dateStr = searchParams.get('date');
 
@@ -95,15 +96,49 @@ export default function TimelinePage() {
 
   const loadEntries = useCallback(async () => {
     setIsLoading(true);
-    // In a real app, you would fetch entries for the selectedDate
-    const sortedEntries = mockJournalEntries.sort((a,b) => new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime());
-    setEntries(sortedEntries);
+    if (typeof window !== 'undefined') {
+      const storedEntriesJson = localStorage.getItem('journalEntries');
+      let storedEntries = storedEntriesJson ? JSON.parse(storedEntriesJson) : [];
+      if (storedEntries.length === 0) {
+        storedEntries = mockJournalEntries;
+        localStorage.setItem('journalEntries', JSON.stringify(mockJournalEntries));
+      }
+      
+      const filtered = storedEntries.filter((entry: any) => 
+        format(new Date(entry.entry_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
+      );
+      const sortedEntries = filtered.sort((a: any, b: any) => new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime());
+      setEntries(sortedEntries);
+    }
     setIsLoading(false);
-  }, []);
+  }, [selectedDate]);
 
   useEffect(() => {
     loadEntries();
   }, [loadEntries]);
+
+  const handleDelete = (id: string) => {
+    if (typeof window !== 'undefined') {
+      const storedEntriesJson = localStorage.getItem('journalEntries');
+      const storedEntries = storedEntriesJson ? JSON.parse(storedEntriesJson) : [];
+      const updatedEntries = storedEntries.filter((entry: any) => entry.id !== id);
+      localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+      loadEntries();
+    }
+  };
+
+  const handleEdit = (id: string) => {
+     if (typeof window !== 'undefined') {
+      const storedEntriesJson = localStorage.getItem('journalEntries');
+      const storedEntries = storedEntriesJson ? JSON.parse(storedEntriesJson) : [];
+      const entryToEdit = storedEntries.find((entry: any) => entry.id === id);
+      if (entryToEdit) {
+        localStorage.setItem('entryToEdit', JSON.stringify(entryToEdit));
+        localStorage.setItem('entryToEditId', id);
+        router.push('/new-entry');
+      }
+    }
+  };
 
 
   return (
@@ -147,7 +182,7 @@ export default function TimelinePage() {
              <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200"></div>
               <div className="space-y-6">
                 {entries.map((entry) => (
-                  <EntryItem key={entry.id} entry={entry} />
+                  <EntryItem key={entry.id} entry={entry} onDelete={handleDelete} onEdit={handleEdit} />
                 ))}
               </div>
           </div>

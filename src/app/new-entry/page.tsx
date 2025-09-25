@@ -46,6 +46,15 @@ export default function NewEntry() {
         );
         localStorage.removeItem('voice-transcript');
       }
+
+      const entryToEditJson = localStorage.getItem('entryToEdit');
+      if (entryToEditJson) {
+        const entryToEdit = JSON.parse(entryToEditJson);
+        setTitle(entryToEdit.title);
+        setContent(entryToEdit.content);
+        // Clean up so it doesn't load again
+        localStorage.removeItem('entryToEdit');
+      }
     }
   }, []);
 
@@ -71,13 +80,42 @@ export default function NewEntry() {
       return;
     }
 
-    console.log({
-      title: title || 'Untitled',
-      content: content,
-      entry_date: new Date().toISOString(),
-    });
+    if (typeof window !== 'undefined') {
+      const existingEntriesJson = localStorage.getItem('journalEntries');
+      const existingEntries = existingEntriesJson
+        ? JSON.parse(existingEntriesJson)
+        : [];
+      
+      const entryToEditId = localStorage.getItem('entryToEditId');
 
-    router.push('/dashboard');
+      if (entryToEditId) {
+        // Update existing entry
+        const updatedEntries = existingEntries.map((entry: any) => 
+          entry.id === entryToEditId 
+            ? { ...entry, title: title || 'Untitled', content }
+            : entry
+        );
+        localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+        localStorage.removeItem('entryToEditId');
+      } else {
+        // Add new entry
+        const newEntry = {
+          id: new Date().toISOString(),
+          title: title || 'Untitled',
+          content: content,
+          entry_date: new Date().toISOString(),
+          mood_score: Math.floor(Math.random() * 8) + 1, // Mock mood score
+          category: 'feelings'
+        };
+        const updatedEntries = [...existingEntries, newEntry];
+        localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+      }
+    }
+    
+    toast({
+      title: 'Entry saved!',
+    });
+    router.push(`/timeline?date=${format(new Date(), 'yyyy-MM-dd')}`);
   };
 
   const handleAttachment = () => {
