@@ -174,7 +174,7 @@ const BalanceCard = () => (
                 <h3 className="text-2xl font-bold">The balance</h3>
                 <h3 className="text-2xl font-bold">of life today</h3>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mt-8">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mt-8 invisible">
                 <Hourglass className="w-4 h-4" />
                 <span>15 min</span>
             </div>
@@ -191,7 +191,7 @@ const BalanceCard = () => (
     </div>
 );
 
-const TriggerCard = ({ title, time, character }: { title: string, time: string, character: React.ReactNode }) => (
+const TriggerCard = ({ title, character }: { title: string, character: React.ReactNode }) => (
     <div className="bg-white/50 rounded-2xl p-4 flex flex-col justify-between h-48">
         <div>
             <h3 className="text-lg font-bold">{title}</h3>
@@ -200,9 +200,9 @@ const TriggerCard = ({ title, time, character }: { title: string, time: string, 
             {character}
         </div>
         <div className="flex items-center justify-between text-sm text-gray-500">
-             <div className="flex items-center gap-2">
+             <div className="flex items-center gap-2 invisible">
                 <Hourglass className="w-4 h-4" />
-                <span>{time}</span>
+                <span></span>
             </div>
             <ArrowUpRight className="w-5 h-5 text-gray-400" />
         </div>
@@ -248,17 +248,19 @@ export default function InsightsPage() {
     return (
         <div className="min-h-screen bg-[#FBF9F7] font-sans text-gray-800">
             <div className="container mx-auto px-4 py-6 pb-24">
-                <header className="flex items-center justify-between mb-8">
+                <header className="grid grid-cols-3 items-center mb-8">
                     <div className="flex items-center gap-3">
                         <Avatar>
                             <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
                             <AvatarFallback>CN</AvatarFallback>
                         </Avatar>
-                        <h1 className="font-bold text-xl">Self Journal</h1>
                     </div>
-                    <Button variant="ghost" size="icon">
-                        <Bell className="w-6 h-6" />
-                    </Button>
+                    <h1 className="font-bold text-xl text-center">Self Journal</h1>
+                    <div className="flex justify-end">
+                      <Button variant="ghost" size="icon">
+                          <Bell className="w-6 h-6" />
+                      </Button>
+                    </div>
                 </header>
 
                 <main>
@@ -299,9 +301,9 @@ export default function InsightsPage() {
                         progress={60}
                       />
                     </section>
-
+                    <h2 className="text-lg font-bold mb-4">Journal Insight</h2>
                     <section className="bg-white p-6 rounded-2xl shadow-sm mb-8">
-                        <h2 className="text-xl font-bold mb-4">Journal Insight</h2>
+                        
                         <div className="mb-6">
                             <p className="text-2xl font-bold">{insights.mostFrequentEmotion}</p>
                             <p className="text-gray-500">Most frequent emotion</p>
@@ -331,7 +333,6 @@ export default function InsightsPage() {
                         <div className="grid grid-cols-2 gap-4">
                            <TriggerCard 
                                 title="Your source of negativity" 
-                                time="30 min"
                                 character={
                                      <svg width="80" height="80" viewBox="0 0 100 100">
                                         <path d="M 85.3,63.2 C 94.6,47.4 89.2,27.5 73.4,18.2 C 57.6,8.9 37.7,14.3 28.4,30.1 C 19.1,45.9 24.5,65.8 40.3,75.1 C 56.1,84.4 76,79 85.3,63.2 Z" fill="#A5B4FC"></path>
@@ -343,7 +344,6 @@ export default function InsightsPage() {
                             />
                              <TriggerCard 
                                 title="Triggers of bad moods" 
-                                time="20 min"
                                 character={
                                      <svg width="80" height="80" viewBox="0 0 100 100">
                                         <path d="M 85.3,63.2 C 94.6,47.4 89.2,27.5 73.4,18.2 C 57.6,8.9 37.7,14.3 28.4,30.1 C 19.1,45.9 24.5,65.8 40.3,75.1 C 56.1,84.4 76,79 85.3,63.2 Z" fill="#FDBA74"></path>
@@ -362,5 +362,3 @@ export default function InsightsPage() {
         </div>
     );
 }
-
-    
