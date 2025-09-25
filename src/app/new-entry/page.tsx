@@ -166,12 +166,6 @@ export default function NewEntry() {
     }
   };
 
-  const handleAIAction = () => {
-    const formData = new FormData();
-    formData.append('entry', content);
-    generatePromptsFormAction(formData);
-  };
-
 
   return (
     <div className="h-screen w-full bg-[#F8F5F2] flex flex-col font-sans">
@@ -215,6 +209,7 @@ export default function NewEntry() {
               className="text-4xl font-bold text-gray-800 bg-transparent outline-none mb-4 placeholder:text-gray-400"
             />
             <Textarea
+              name="entry"
               placeholder="Write anything that's on your mind..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -234,9 +229,11 @@ export default function NewEntry() {
               </Button>
             </Link>
             <div className="h-6 w-px bg-gray-200" />
-            <Button variant="ghost" size="icon" className="text-gray-600" onClick={handleAIAction}>
-              <Sparkles className="w-6 h-6" />
-            </Button>
+            <form>
+              <Button formAction={generatePromptsFormAction} variant="ghost" size="icon" className="text-gray-600">
+                <Sparkles className="w-6 h-6" />
+              </Button>
+            </form>
             <div className="h-6 w-px bg-gray-200" />
             <Button variant="ghost" size="icon" className="text-gray-600" onClick={handleAttachment}>
               <Paperclip className="w-6 h-6" />
