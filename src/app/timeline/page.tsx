@@ -59,7 +59,7 @@ const EntryItem = ({ entry, onDelete, onEdit }: { entry: any, onDelete: (id: str
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-gray-800">{entry.title}</h3>
-                  <p className="text-sm text-gray-500 truncate">{entry.content}</p>
+                  <p className="text-sm text-gray-500 break-words">{entry.content}</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-300 self-center" />
               </div>
