@@ -12,7 +12,7 @@ import {
   addMonths,
   subMonths,
 } from 'date-fns';
-import { ArrowUpFromLine, ChevronLeft, ChevronRight, Home, LineChart, Search, Compass, Sparkles } from 'lucide-react';
+import { ArrowUpFromLine, ChevronLeft, ChevronRight, Home, LineChart, Search, Sparkles, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -369,11 +369,11 @@ export default function Dashboard() {
         <div className="relative max-w-sm mx-auto">
           <div className="bg-black/70 backdrop-blur-lg rounded-full p-2 flex items-center justify-around text-white">
             <NavLink href="/dashboard" icon={Home} label="Home" activePath={pathname} />
-            <NavLink href="/explore" icon={Compass} label="Explore" activePath={pathname} />
+            <NavLink href="/timeline" icon={Search} label="History" activePath={pathname} />
             {/* Placeholder for the middle button */}
             <div className="w-12 h-12"></div>
             <NavLink href="/insights" icon={LineChart} label="Insights" activePath={pathname} />
-            <NavLink href="/timeline" icon={Search} label="History" activePath={pathname} />
+            <NavLink href="/settings" icon={Settings} label="Settings" activePath={pathname} />
           </div>
           <Link href="/new-entry">
             <div className="absolute top-[-24px] left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-gradient-to-br from-cyan-400 to-purple-600 flex items-center justify-center cursor-pointer shadow-lg">
