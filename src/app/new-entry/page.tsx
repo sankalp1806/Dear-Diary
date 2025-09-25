@@ -171,7 +171,7 @@ export default function NewEntry() {
 
   return (
     <div className="h-screen w-full bg-[#F8F5F2] flex flex-col font-sans">
-      <div className="w-full max-w-2xl mx-auto flex flex-col flex-1">
+      <div className="w-full max-w-2xl mx-auto flex flex-col flex-1 h-full">
         <div className="absolute top-0 left-0 right-0 h-1 bg-green-200">
           <motion.div
             className="h-full bg-green-500"
@@ -189,7 +189,7 @@ export default function NewEntry() {
           <div className="w-10"></div>
         </header>
 
-        <main className="flex-1 px-6 py-4 flex flex-col">
+        <main className="flex-1 px-6 py-4 flex flex-col overflow-y-auto">
         <div className="flex items-center gap-2 mb-6 flex-wrap">
             <Button
               variant="outline"
@@ -219,7 +219,7 @@ export default function NewEntry() {
           </div>
         </main>
 
-        <footer className="p-4">
+        <footer className="p-4 mt-auto">
           <p className="text-center text-gray-400 text-sm mb-3">
             Tap to continue your journal!
           </p>
