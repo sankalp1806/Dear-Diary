@@ -102,7 +102,7 @@ export async function getSentimentForEntry(entryText: string): Promise<ProvideEm
 export async function getBalanceInsightAction(journalEntries: string) {
     try {
         const result = await getBalanceOfLifeInsight({ journalEntries });
-        return { success: true, data: result.insight };
+        return { success: true, data: result };
     } catch (error) {
         console.error("Error in getBalanceInsightAction:", error);
         return { success: false, error: "Failed to generate balance insight." };

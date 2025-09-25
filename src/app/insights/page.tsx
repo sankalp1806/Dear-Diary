@@ -26,6 +26,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { getBalanceInsightAction, getNegativityInsightAction, getTriggersInsightAction } from '@/app/actions';
+import type { GetBalanceOfLifeInsightOutput } from '@/ai/flows/get-balance-of-life-insight';
+
 
 interface JournalEntry {
   id: string;
@@ -244,7 +246,7 @@ export default function InsightsPage() {
     const [isClient, setIsClient] = useState(false);
     const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
 
-    const [balanceInsight, setBalanceInsight] = useState<string>('');
+    const [balanceInsight, setBalanceInsight] = useState<GetBalanceOfLifeInsightOutput | null>(null);
     const [negativityInsight, setNegativityInsight] = useState<string[]>([]);
     const [triggersInsight, setTriggersInsight] = useState<string[]>([]);
     const [isLoadingInsight, setIsLoadingInsight] = useState(false);
@@ -264,7 +266,7 @@ export default function InsightsPage() {
         let result;
         if (type === 'balance') {
             result = await getBalanceInsightAction(entriesJson);
-            if (result.success) setBalanceInsight(result.data || '');
+            if (result.success) setBalanceInsight(result.data || null);
         } else if (type === 'negativity') {
             result = await getNegativityInsightAction(entriesJson);
             if (result.success) setNegativityInsight(result.data || []);
@@ -394,7 +396,23 @@ export default function InsightsPage() {
                                 <DialogHeader>
                                     <DialogTitle>The Balance of Life Today</DialogTitle>
                                 </DialogHeader>
-                                <div>{isLoadingInsight ? <p>Loading insight...</p> : <p>{balanceInsight}</p>}</div>
+                                <div>
+                                {isLoadingInsight ? (
+                                    <p>Loading insight...</p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <p>{balanceInsight?.insight}</p>
+                                        {balanceInsight?.actionableAdvice && balanceInsight.actionableAdvice.length > 0 && (
+                                            <div>
+                                                <h4 className="font-semibold mt-4 mb-2">Here are some suggestions:</h4>
+                                                <ul className="list-disc pl-5 space-y-2">
+                                                    {balanceInsight.actionableAdvice.map((item, index) => <li key={index}>{item}</li>)}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                </div>
                             </DialogContent>
                         </Dialog>
 
@@ -466,3 +484,4 @@ export default function InsightsPage() {
     );
 
     
+}
