@@ -145,9 +145,6 @@ export default function NewEntry() {
       }
     }
     
-    toast({
-      title: 'Entry saved!',
-    });
     router.push(`/timeline?date=${format(entryDate, 'yyyy-MM-dd')}`);
   };
 

@@ -14,26 +14,26 @@ import {
 import { format, parseISO, isValid } from 'date-fns';
 import { motion } from 'framer-motion';
 
-const moods: { [key: number]: { emoji: string; label: string; color: string } } = {
-  1: { emoji: '😔', label: 'Apathetic', color: 'bg-indigo-100' },
-  2: { emoji: '😠', label: 'Angry', color: 'bg-red-100' },
-  3: { emoji: '😟', label: 'Anxious', color: 'bg-purple-100' },
-  4: { emoji: '😐', label: 'Neutral', color: 'bg-gray-100' },
-  5: { emoji: '🙂', label: 'Calm', color: 'bg-blue-100' },
-  6: { emoji: '😊', label: 'Happy', color: 'bg-yellow-100' },
-  7: { emoji: '😃', label: 'Excited', color: 'bg-orange-100' },
-  8: { emoji: '😍', label: 'Grateful', color: 'bg-pink-100' },
+const sentimentToMood: (sentiment?: string) => { emoji: string; label: string; color: string } = (sentiment) => {
+  const sentimentStr = sentiment?.toLowerCase() || 'neutral';
+  if (sentimentStr.includes('very positive')) return { emoji: '😃', label: 'Excited', color: 'bg-orange-100' };
+  if (sentimentStr.includes('positive')) return { emoji: '😊', label: 'Happy', color: 'bg-yellow-100' };
+  if (sentimentStr.includes('very negative')) return { emoji: '😠', label: 'Angry', color: 'bg-red-100' };
+  if (sentimentStr.includes('negative')) return { emoji: '😟', label: 'Anxious', color: 'bg-purple-100' };
+  if (sentimentStr.includes('mixed')) return { emoji: '🙂', label: 'Calm', color: 'bg-blue-100' };
+  return { emoji: '😐', label: 'Neutral', color: 'bg-gray-100' };
 };
+
 
 // Mock JournalEntry entity
 const mockJournalEntries = [
-    { id: '1', title: 'Fellt happy xD', content: 'Today was a painful day. I found...', mood_score: 6, entry_date: new Date(new Date().setHours(9, 15)).toISOString(), category: 'feelings' },
-    { id: '2', title: 'Just got promotion. OMGG!', content: 'Today was a good day, I found...', mood_score: 7, entry_date: new Date(new Date().setHours(11, 30)).toISOString(), category: 'mood' },
-    { id: '3', title: "don't know wht to do anym...", content: 'Felt a bit anxious about the upcoming presentation.', mood_score: 3, entry_date: new Date(new Date().setHours(13, 0)).toISOString(), category: 'feelings' },
+    { id: '1', title: 'Fellt happy xD', content: 'Today was a painful day. I found...', mood_score: 6, sentiment: 'positive', entry_date: new Date(new Date().setHours(9, 15)).toISOString(), category: 'feelings' },
+    { id: '2', title: 'Just got promotion. OMGG!', content: 'Today was a good day, I found...', mood_score: 7, sentiment: 'very positive', entry_date: new Date(new Date().setHours(11, 30)).toISOString(), category: 'mood' },
+    { id: '3', title: "don't know wht to do anym...", content: 'Felt a bit anxious about the upcoming presentation.', mood_score: 3, sentiment: 'negative', entry_date: new Date(new Date().setHours(13, 0)).toISOString(), category: 'feelings' },
 ];
 
 const EntryItem = ({ entry, onDelete, onEdit }: { entry: any, onDelete: (id: string) => void, onEdit: (id: string) => void }) => {
-  const mood = entry.mood_score ? moods[entry.mood_score] || moods[4] : moods[4];
+  const mood = sentimentToMood(entry.sentiment);
 
   return (
     <div className="flex gap-4 items-start relative">
