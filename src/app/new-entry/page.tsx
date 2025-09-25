@@ -12,11 +12,18 @@ import {
   Smile,
   ArrowRight,
   Sparkles,
+  Bot,
+  User,
 } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
-import { generatePromptsAction, getSentimentForEntry } from '@/app/actions';
+import { generatePromptsAction, getSentimentForEntry, continueConversationAction } from '@/app/actions';
+
+interface ChatMessage {
+  sender: 'user' | 'ai';
+  text: string;
+}
 
 export default function NewEntry() {
   const router = useRouter();
@@ -32,6 +39,13 @@ export default function NewEntry() {
     generatePromptsAction,
     null
   );
+
+  const [isChatMode, setIsChatMode] = useState(false);
+  const [conversation, setConversation] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -91,13 +105,22 @@ export default function NewEntry() {
     }
   }, [promptsState, toast]);
 
+    useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [conversation]);
+
   const handleSave = async () => {
     if (!content && !title) {
       router.push('/dashboard');
       return;
     }
 
-    const sentimentResult = await getSentimentForEntry(content);
+    const finalContent = isChatMode ? conversation.map(m => `${m.sender === 'ai' ? 'AI' : 'Me'}: ${m.text}`).join('\n') : content;
+
+
+    const sentimentResult = await getSentimentForEntry(finalContent);
     const primaryEmotion = sentimentResult?.emotion || 'Neutral';
     const overallSentiment = sentimentResult?.overallSentiment?.toLowerCase() || 'neutral';
 
@@ -126,7 +149,7 @@ export default function NewEntry() {
         // Update existing entry
         const updatedEntries = existingEntries.map((entry: any) => 
           entry.id === entryToEditId 
-            ? { ...entry, title: title || 'Untitled', content, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score, emotion: primaryEmotion }
+            ? { ...entry, title: title || 'Untitled', content: finalContent, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score, emotion: primaryEmotion }
             : entry
         );
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
@@ -136,7 +159,7 @@ export default function NewEntry() {
         const newEntry = {
           id: new Date().toISOString(),
           title: title || 'Untitled',
-          content: content,
+          content: finalContent,
           entry_date: entryDate.toISOString(),
           mood_score: mood_score,
           sentiment: overallSentiment,
@@ -166,6 +189,59 @@ export default function NewEntry() {
     }
   };
 
+  const handleAiChatToggle = async () => {
+    if (!isChatMode) {
+      setIsChatMode(true);
+      setIsAiTyping(true);
+      // Start conversation
+      const result = await continueConversationAction([]);
+      if (result.success && result.data) {
+        setConversation([{ sender: 'ai', text: result.data.response }]);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'AI Error',
+          description: result.error || 'Could not start conversation.',
+        });
+        setIsChatMode(false);
+      }
+      setIsAiTyping(false);
+    } else {
+      setIsChatMode(false);
+      // If there's a conversation, put it into the content
+      if (conversation.length > 0) {
+        setContent(conversation.map(m => `${m.sender === 'ai' ? 'AI' : 'Me'}: ${m.text}`).join('\n'));
+      }
+    }
+  };
+
+  const handleChatSubmit = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!chatInput.trim() || isAiTyping) return;
+
+      const newUserMessage: ChatMessage = { sender: 'user', text: chatInput };
+      const newConversation = [...conversation, newUserMessage];
+      setConversation(newConversation);
+      setChatInput('');
+      setIsAiTyping(true);
+
+      const result = await continueConversationAction(newConversation);
+
+      if (result.success && result.data) {
+        setConversation(prev => [...prev, { sender: 'ai', text: result.data!.response }]);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'AI Error',
+          description: result.error || 'Failed to get AI response.',
+        });
+        // Optionally remove the user message if AI fails
+        setConversation(newConversation); 
+      }
+      setIsAiTyping(false);
+    }
+  };
 
   return (
     <div className="h-screen w-full bg-[#F8F5F2] flex flex-col font-sans">
@@ -187,7 +263,7 @@ export default function NewEntry() {
           <div className="w-10"></div>
         </header>
 
-        <main className="flex-1 px-6 py-4 flex flex-col overflow-y-auto">
+        <main className="flex-1 px-6 py-4 flex flex-col overflow-hidden">
         <div className="flex items-center gap-2 mb-6 flex-wrap">
             <Button
               variant="outline"
@@ -201,39 +277,75 @@ export default function NewEntry() {
           </div>
 
           <div className="flex-1 flex flex-col">
-            <input
-              type="text"
-              placeholder="Untitled"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="text-4xl font-bold text-gray-800 bg-transparent outline-none mb-4 placeholder:text-gray-400"
-            />
-            <Textarea
-              name="entry"
-              placeholder="Write anything that's on your mind..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="flex-1 text-lg text-gray-600 bg-transparent border-none outline-none resize-none p-0 focus-visible:ring-0 placeholder:text-gray-400"
-            />
+            {!isChatMode ? (
+              <>
+                <input
+                  type="text"
+                  placeholder="Untitled"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="text-4xl font-bold text-gray-800 bg-transparent outline-none mb-4 placeholder:text-gray-400"
+                />
+                <Textarea
+                  name="entry"
+                  placeholder="Write anything that's on your mind..."
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="flex-1 text-xl text-gray-600 bg-transparent border-none outline-none resize-none p-0 focus-visible:ring-0 placeholder:text-gray-400"
+                />
+              </>
+            ) : (
+               <div ref={chatContainerRef} className="flex-1 space-y-4 overflow-y-auto pr-2">
+                {conversation.map((msg, index) => (
+                  <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                    {msg.sender === 'ai' && <Bot className="w-6 h-6 text-gray-500 shrink-0" />}
+                    <div className={`p-3 rounded-lg max-w-md ${msg.sender === 'ai' ? 'bg-white' : 'bg-green-100'}`}>
+                      <p className="text-gray-800 whitespace-pre-wrap">{msg.text}</p>
+                    </div>
+                    {msg.sender === 'user' && <User className="w-6 h-6 text-gray-500 shrink-0" />}
+                  </div>
+                ))}
+                 {isAiTyping && (
+                  <div className="flex items-start gap-3">
+                    <Bot className="w-6 h-6 text-gray-500 shrink-0" />
+                    <div className="p-3 rounded-lg bg-white">
+                      <p className="text-gray-500 italic">typing...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </main>
 
         <footer className="p-4 mt-auto">
-          <p className="text-center text-gray-400 text-sm mb-3">
-            Tap to continue your journal!
-          </p>
-          <div className="bg-white rounded-full shadow-lg p-2 flex items-center justify-around">
+          {isChatMode ? (
+              <div className="bg-white rounded-lg shadow-lg p-2 flex items-center">
+                 <Textarea
+                    placeholder="Message your AI friend..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={handleChatSubmit}
+                    className="flex-1 bg-transparent border-none outline-none resize-none p-2 focus-visible:ring-0 placeholder:text-gray-400"
+                    rows={1}
+                />
+              </div>
+          ) : (
+            <p className="text-center text-gray-400 text-sm mb-3">
+                Tap to continue your journal!
+            </p>
+          )}
+
+          <div className="bg-white rounded-full shadow-lg p-2 flex items-center justify-around mt-3">
             <Link href="/voice-chat">
               <Button variant="ghost" size="icon" className="text-gray-600">
                 <Mic className="w-6 h-6" />
               </Button>
             </Link>
             <div className="h-6 w-px bg-gray-200" />
-            <form>
-              <Button formAction={generatePromptsFormAction} variant="ghost" size="icon" className="text-gray-600">
-                <Sparkles className="w-6 h-6" />
+             <Button variant="ghost" size="icon" className="text-gray-600" onClick={handleAiChatToggle}>
+                <Sparkles className={`w-6 h-6 transition-colors ${isChatMode ? 'text-purple-600' : ''}`} />
               </Button>
-            </form>
             <div className="h-6 w-px bg-gray-200" />
             <Button variant="ghost" size="icon" className="text-gray-600" onClick={handleAttachment}>
               <Paperclip className="w-6 h-6" />

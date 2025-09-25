@@ -7,6 +7,7 @@ import { generateSelfReflectionPrompts } from '@/ai/flows/generate-self-reflecti
 import { getBalanceOfLifeInsight } from '@/ai/flows/get-balance-of-life-insight';
 import { getNegativeSourceInsight } from '@/ai/flows/get-negative-source-insight';
 import { getBadMoodTriggersInsight } from '@/ai/flows/get-bad-mood-triggers-insight';
+import { continueConversation } from '@/ai/flows/continue-conversation';
 import type { AnalysisState, PromptsState } from '@/lib/types';
 
 const journalEntrySchema = z.object({
@@ -127,4 +128,21 @@ export async function getTriggersInsightAction(journalEntries: string) {
         console.error("Error in getTriggersInsightAction:", error);
         return { success: false, error: "Failed to generate mood triggers insight." };
     }
+}
+
+interface ChatMessage {
+  sender: 'user' | 'ai';
+  text: string;
+}
+
+export async function continueConversationAction(
+  conversationHistory: ChatMessage[]
+) {
+  try {
+    const result = await continueConversation({ conversationHistory });
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Error in continueConversationAction:", error);
+    return { success: false, error: "Failed to get AI response." };
+  }
 }

@@ -8,3 +8,4 @@ import '@/ai/flows/generate-self-reflection-prompts.ts';
 import '@/ai/flows/get-balance-of-life-insight.ts';
 import '@/ai/flows/get-negative-source-insight.ts';
 import '@/ai/flows/get-bad-mood-triggers-insight.ts';
+import '@/ai/flows/continue-conversation.ts';
