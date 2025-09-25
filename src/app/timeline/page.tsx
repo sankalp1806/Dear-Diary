@@ -54,7 +54,7 @@ const EntryItem = ({ entry, onDelete, onEdit }: { entry: any, onDelete: (id: str
           >
             <div className=" p-4">
               <div className="flex items-start gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${mood.color}`}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-3xl">
                   {mood.emoji}
                 </div>
                 <div className="flex-1">
@@ -193,7 +193,7 @@ export default function TimelinePage() {
       </main>
 
       <footer className="p-4 bg-transparent sticky bottom-0">
-          <Link href="/new-entry" className="flex-1">
+          <Link href={`/new-entry?date=${format(selectedDate, 'yyyy-MM-dd')}`} className="flex-1">
             <Button className="w-full h-14 bg-blue-600 text-white rounded-full shadow-lg text-lg">
               New note
             </Button>
