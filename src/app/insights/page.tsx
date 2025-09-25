@@ -26,6 +26,7 @@ interface JournalEntry {
   entry_date: string;
   mood_score: number;
   category: string;
+  sentiment?: string;
 }
 
 interface InsightsData {
@@ -73,8 +74,14 @@ const processJournalData = (entries: JournalEntry[]): InsightsData | null => {
   const emotionFrequency: { [key: string]: number } = {};
 
   entries.forEach(entry => {
-    if (entry.mood_score > 5) positiveCount++;
-    if (entry.mood_score < 4) negativeCount++;
+    // Use AI sentiment if available
+    if (entry.sentiment) {
+      if (entry.sentiment.includes('positive')) positiveCount++;
+      if (entry.sentiment.includes('negative')) negativeCount++;
+    } else { // Fallback to mood_score
+      if (entry.mood_score > 5) positiveCount++;
+      if (entry.mood_score < 4) negativeCount++;
+    }
     
     const emotion = moodToEmotionMap[entry.mood_score];
     if (emotion) {
@@ -284,21 +291,21 @@ export default function InsightsPage() {
                         label="Total Words"
                         icon={<Eye className="w-6 h-6 text-amber-800" />}
                         color="#A16207"
-                        progress={75}
+                        progress={100} // Assuming 100% as it's a total
                       />
                       <StatCard
                         value={insights.negativeCount}
                         label="Negative"
                         icon={<Minus className="w-6 h-6 text-red-500" />}
                         color="#EF4444"
-                        progress={40}
+                        progress={insights.totalJournals > 0 ? (insights.negativeCount / insights.totalJournals) * 100 : 0}
                       />
                       <StatCard
                         value={insights.positiveCount}
                         label="Positive"
                         icon={<Plus className="w-6 h-6 text-green-500" />}
                         color="#22C55E"
-                        progress={60}
+                        progress={insights.totalJournals > 0 ? (insights.positiveCount / insights.totalJournals) * 100 : 0}
                       />
                     </section>
                     <h2 className="text-lg font-bold mb-4">Journal Insight</h2>

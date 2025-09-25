@@ -16,7 +16,7 @@ import {
 import { format, parseISO, isValid } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
-import { generatePromptsAction } from '@/app/actions';
+import { generatePromptsAction, getSentimentForEntry } from '@/app/actions';
 
 export default function NewEntry() {
   const router = useRouter();
@@ -95,6 +95,21 @@ export default function NewEntry() {
       return;
     }
 
+    const sentimentResult = await getSentimentForEntry(content);
+    const overallSentiment = sentimentResult?.overallSentiment?.toLowerCase() || 'neutral';
+
+    let mood_score = 4; // Default to neutral
+    if (overallSentiment.includes('very positive')) {
+        mood_score = 8;
+    } else if (overallSentiment.includes('positive')) {
+        mood_score = 6;
+    } else if (overallSentiment.includes('very negative')) {
+        mood_score = 2;
+    } else if (overallSentiment.includes('negative')) {
+        mood_score = 3;
+    }
+
+
     if (typeof window !== 'undefined') {
       const existingEntriesJson = localStorage.getItem('journalEntries');
       const existingEntries = existingEntriesJson
@@ -107,7 +122,7 @@ export default function NewEntry() {
         // Update existing entry
         const updatedEntries = existingEntries.map((entry: any) => 
           entry.id === entryToEditId 
-            ? { ...entry, title: title || 'Untitled', content, entry_date: entryDate.toISOString() }
+            ? { ...entry, title: title || 'Untitled', content, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score }
             : entry
         );
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
@@ -119,7 +134,8 @@ export default function NewEntry() {
           title: title || 'Untitled',
           content: content,
           entry_date: entryDate.toISOString(),
-          mood_score: Math.floor(Math.random() * 8) + 1, // Mock mood score
+          mood_score: mood_score,
+          sentiment: overallSentiment,
           category: 'feelings'
         };
         const updatedEntries = [...existingEntries, newEntry];

@@ -78,3 +78,20 @@ export async function generatePromptsAction(
     };
   }
 }
+
+export async function getSentimentForEntry(entryText: string) {
+    if (!entryText || entryText.length < 10) {
+        return { overallSentiment: 'neutral' };
+    }
+    try {
+        const insights = await provideEmotionalInsights({
+            journalEntry: entryText,
+            userId: 'user-123', // Mock user ID
+        });
+        return insights;
+    } catch (error) {
+        console.error("Error getting sentiment:", error);
+        // Return neutral sentiment as a fallback
+        return { overallSentiment: 'neutral' };
+    }
+}
