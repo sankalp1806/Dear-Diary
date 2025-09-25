@@ -19,7 +19,10 @@ export default function Landing() {
   const [dragConstraints, setDragConstraints] = useState({ top: 0, bottom: 0 });
 
   useEffect(() => {
-    setDragConstraints({ top: -window.innerHeight, bottom: 0 });
+    // This effect should only run on the client
+    if (typeof window !== 'undefined') {
+        setDragConstraints({ top: -window.innerHeight, bottom: 0 });
+    }
 
     const greetingInterval = setInterval(() => {
       setGreetingIndex((prevIndex) => (prevIndex + 1) % greetings.length);
@@ -36,7 +39,7 @@ export default function Landing() {
   }, []);
 
   const handleDragEnd = (event: any, info: any) => {
-    if (info.offset.y < -150) { // Increased threshold for navigation
+    if (info.offset.y < -50) { // Reduced threshold for more responsive navigation
       router.push('/new-entry');
     }
   };
