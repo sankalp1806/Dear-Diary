@@ -7,12 +7,15 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
 import { subDays, format, eachDayOfInterval } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Bell, Book, Plus, Smile, Meh, Frown, Angry, SmilePlus, BookOpen } from 'lucide-react';
+import { Bell, Book, Plus, Smile, Meh, Frown, Angry, SmilePlus, BookOpen, Minus, Eye } from 'lucide-react';
 import NavFooter from '@/components/shared/footer';
 import Link from 'next/link';
 
@@ -124,6 +127,46 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
   };
 
+const StatCard = ({ value, label, icon, color, progress }: { value: number; label: string; icon: React.ReactNode; color: string; progress: number; }) => {
+  const data = [
+    { name: 'progress', value: progress, color: color },
+    { name: 'remaining', value: 100 - progress, color: '#F3F4F6' },
+  ];
+  return (
+    <div className="flex flex-col items-center text-center">
+      <div className="relative w-24 h-24">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={30}
+              outerRadius={40}
+              startAngle={90}
+              endAngle={450}
+              paddingAngle={0}
+              dataKey="value"
+              stroke="none"
+            >
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center`}>
+            {icon}
+          </div>
+        </div>
+      </div>
+      <p className="font-bold text-2xl mt-2">{value.toLocaleString()}</p>
+      <p className="text-sm text-gray-500">{label}</p>
+    </div>
+  );
+};
+
 export default function InsightsPage() {
     const [insights, setInsights] = useState<InsightsData | null>(null);
     const [isClient, setIsClient] = useState(false);
@@ -190,35 +233,30 @@ export default function InsightsPage() {
                             </ResponsiveContainer>
                         </div>
                     </section>
-
-                    <section className="text-center mb-8 p-6 bg-white/50 rounded-2xl">
-                        <Book className="w-8 h-8 text-amber-700 mx-auto mb-2" />
-                        <p className="text-7xl font-bold mb-1">{insights.totalJournals}</p>
-                        <p className="text-gray-600">Total Journals</p>
-                    </section>
                     
                     <section className="grid grid-cols-3 gap-4 text-center mb-8">
-                        <div>
-                            <p className="font-bold text-2xl">{insights.totalWords.toLocaleString()}</p>
-                            <p className="text-sm text-gray-500">Total Words</p>
-                        </div>
-                        <div>
-                            <p className="font-bold text-2xl">{insights.negativeCount}</p>
-                            <p className="text-sm text-gray-500">Negative</p>
-                        </div>
-                        <div>
-                            <p className="font-bold text-2xl">{insights.positiveCount}</p>
-                            <p className="text-sm text-gray-500">Positive</p>
-                        </div>
+                      <StatCard
+                        value={insights.totalWords}
+                        label="Total Words"
+                        icon={<Eye className="w-6 h-6 text-amber-800" />}
+                        color="#A16207"
+                        progress={75}
+                      />
+                      <StatCard
+                        value={insights.negativeCount}
+                        label="Negative"
+                        icon={<Minus className="w-6 h-6 text-red-500" />}
+                        color="#EF4444"
+                        progress={40}
+                      />
+                      <StatCard
+                        value={insights.positiveCount}
+                        label="Positive"
+                        icon={<Plus className="w-6 h-6 text-green-500" />}
+                        color="#22C55E"
+                        progress={60}
+                      />
                     </section>
-                    
-                     <div className="text-center mb-8">
-                        <Link href="/new-entry" passHref>
-                          <Button size="icon" className="w-14 h-14 bg-amber-800 rounded-full shadow-lg">
-                              <Plus className="w-8 h-8"/>
-                          </Button>
-                        </Link>
-                    </div>
 
                     <section className="bg-white p-6 rounded-2xl shadow-sm">
                         <h2 className="text-xl font-bold mb-4">Journal Insight</h2>
