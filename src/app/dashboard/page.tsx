@@ -181,27 +181,30 @@ export default function Dashboard() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isClient, setIsClient] = useState(false);
   const [dailyMoods, setDailyMoods] = useState<{ [key: string]: { emoji: string; color: string } }>({});
+  const [entriesByDate, setEntriesByDate] = useState<{ [key: string]: boolean }>({});
 
   const calendarRef = useRef<HTMLDivElement>(null);
 
-  const calculateDailyMoods = useCallback(async () => {
-    if (typeof window === 'undefined') return;
-
+  const calculateDailyMoods = useCallback(() => {
     const storedEntriesJson = localStorage.getItem('journalEntries');
     const entries = storedEntriesJson ? JSON.parse(storedEntriesJson) : [];
     
     if (entries.length === 0) {
       setDailyMoods({});
+      setEntriesByDate({});
       return;
     }
 
     const dailyEntries: { [key: string]: any[] } = {};
+    const newEntriesByDate: { [key: string]: boolean } = {};
+
     for (const entry of entries) {
       const day = format(new Date(entry.entry_date), 'yyyy-MM-dd');
       if (!dailyEntries[day]) {
         dailyEntries[day] = [];
       }
       dailyEntries[day].push(entry);
+      newEntriesByDate[day] = true;
     }
     
     const moods: { [key: string]: { emoji: string; color: string } } = {};
@@ -225,13 +228,13 @@ export default function Dashboard() {
     }
 
     setDailyMoods(moods);
+    setEntriesByDate(newEntriesByDate);
   }, []);
 
   useEffect(() => {
     setIsClient(true);
     calculateDailyMoods();
 
-    // Listen for changes in localStorage from other tabs/windows
     const handleStorageChange = () => {
       calculateDailyMoods();
     };
@@ -296,10 +299,9 @@ export default function Dashboard() {
   );
   
   const hasEntryForDate = (date: Date) => {
-     if (typeof window === 'undefined') return false;
-     const storedEntriesJson = localStorage.getItem('journalEntries');
-     const entries = storedEntriesJson ? JSON.parse(storedEntriesJson) : [];
-     return entries.some((entry: any) => format(new Date(entry.entry_date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'));
+    if (!isClient) return false;
+    const dateString = format(date, 'yyyy-MM-dd');
+    return !!entriesByDate[dateString];
   };
 
   return (
@@ -354,6 +356,27 @@ export default function Dashboard() {
           ))}
 
           {daysInMonth.map((day) => {
+            if (!isClient) {
+              // Initial render on both server and client
+              return (
+                 <Link href="/new-entry" key={day.toString()} passHref>
+                  <div className="flex flex-col items-center cursor-pointer">
+                    <div className={cn('w-10 h-10 rounded-full flex items-center justify-center', 'bg-gray-200')}>
+                    </div>
+                    <span
+                      className={cn(
+                        'mt-2 text-sm',
+                        isToday(day) ? 'bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center' : ''
+                      )}
+                    >
+                      {format(day, 'd')}
+                    </span>
+                  </div>
+                </Link>
+              );
+            }
+            
+            // Client-side only render
             const mood = getMoodForDate(day);
             const hasEntry = hasEntryForDate(day);
             const linkHref = hasEntry
@@ -374,7 +397,7 @@ export default function Dashboard() {
                   <span
                     className={cn(
                       'mt-2 text-sm',
-                      isClient && isToday(day)
+                      isToday(day)
                         ? 'bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center'
                         : ''
                     )}
@@ -394,5 +417,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-    
