@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import {
   Trash2,
   Pencil,
 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { motion } from 'framer-motion';
 
 const moods: { [key: number]: { emoji: string; label: string; color: string } } = {
@@ -92,9 +92,12 @@ export default function TimelinePage() {
   const [entries, setEntries] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const selectedDate = dateStr ? parseISO(dateStr) : new Date();
+  const selectedDate = useMemo(() => {
+    const date = dateStr ? parseISO(dateStr) : new Date();
+    return isValid(date) ? date : new Date();
+  }, [dateStr]);
 
-  const loadEntries = useCallback(async () => {
+  const loadEntries = useCallback(() => {
     setIsLoading(true);
     if (typeof window !== 'undefined') {
       const storedEntriesJson = localStorage.getItem('journalEntries');
