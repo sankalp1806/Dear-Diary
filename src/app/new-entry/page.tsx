@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
   ChevronLeft,
-  Bell,
   Clock,
   Mic,
   Paperclip,
@@ -21,22 +20,29 @@ import {
 } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
+import { generatePromptsAction } from '@/app/actions';
+import { useFormState } from 'react-dom';
 
 export default function NewEntry() {
   const router = useRouter();
+  const { toast } = useToast();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
+  const [promptsState, generatePromptsFormAction] = useFormState(
+    generatePromptsAction,
+    null
+  );
+
   useEffect(() => {
-    // This will only run on the client, preventing a hydration mismatch.
     setCurrentDate(new Date());
-    const timer = setInterval(() => setCurrentDate(new Date()), 60000); // Update time every minute
+    const timer = setInterval(() => setCurrentDate(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
-    // Check for transcript from voice chat page
     if (typeof window !== 'undefined') {
       const voiceTranscript = localStorage.getItem('voice-transcript');
       if (voiceTranscript) {
@@ -48,14 +54,28 @@ export default function NewEntry() {
     }
   }, []);
 
+  useEffect(() => {
+    if (promptsState?.success && promptsState.data?.prompts) {
+      const randomPrompt =
+        promptsState.data.prompts[
+          Math.floor(Math.random() * promptsState.data.prompts.length)
+        ];
+      setContent((prev) => `${prev}${prev ? '\n\n' : ''}${randomPrompt}\n`);
+    } else if (promptsState?.error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error generating prompt',
+        description: promptsState.error,
+      });
+    }
+  }, [promptsState, toast]);
+
   const handleSave = async () => {
     if (!content && !title) {
-      // Don't save empty notes
       router.push('/dashboard');
       return;
     }
 
-    // Placeholder for saving data
     console.log({
       title: title || 'Untitled',
       content: content,
@@ -65,6 +85,20 @@ export default function NewEntry() {
     router.push('/dashboard');
   };
 
+  const handleAttachment = () => {
+    toast({
+      title: 'Feature coming soon!',
+      description: 'The ability to add attachments is not yet available.',
+    });
+  };
+
+  const handleAIAction = () => {
+    const formData = new FormData();
+    formData.append('entry', content);
+    generatePromptsFormAction(formData);
+  };
+
+
   return (
     <div className="h-screen w-full bg-[#F8F5F2] flex flex-col font-sans">
       <div className="w-full max-w-2xl mx-auto flex flex-col flex-1">
@@ -72,7 +106,7 @@ export default function NewEntry() {
           <motion.div
             className="h-full bg-green-500"
             initial={{ width: '0%' }}
-            animate={{ width: '30%' }} // Example progress
+            animate={{ width: '30%' }} 
             transition={{ duration: 1 }}
           />
         </div>
@@ -82,9 +116,7 @@ export default function NewEntry() {
             <ChevronLeft className="w-6 h-6 text-gray-700" />
           </Button>
           <h1 className="text-lg font-semibold text-gray-800">What's Up??</h1>
-          <Button variant="ghost" size="icon">
-            <Bell className="w-6 h-6 text-gray-700" />
-          </Button>
+          <div className="w-10"></div>
         </header>
 
         <main className="flex-1 px-6 py-4 flex flex-col">
@@ -133,11 +165,11 @@ export default function NewEntry() {
               </Button>
             </Link>
             <div className="h-6 w-px bg-gray-200" />
-            <Button variant="ghost" size="icon" className="text-gray-600">
+            <Button variant="ghost" size="icon" className="text-gray-600" onClick={handleAIAction}>
               <Sparkles className="w-6 h-6" />
             </Button>
             <div className="h-6 w-px bg-gray-200" />
-            <Button variant="ghost" size="icon" className="text-gray-600">
+            <Button variant="ghost" size="icon" className="text-gray-600" onClick={handleAttachment}>
               <Paperclip className="w-6 h-6" />
             </Button>
             <div className="h-6 w-px bg-gray-200" />

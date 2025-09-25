@@ -16,8 +16,11 @@ export default function Landing() {
   const y = useMotionValue(0);
   const [greetingIndex, setGreetingIndex] = useState(0);
   const [characterIndex, setCharacterIndex] = useState(0);
+  const [dragConstraints, setDragConstraints] = useState({ top: 0, bottom: 0 });
 
   useEffect(() => {
+    setDragConstraints({ top: -window.innerHeight, bottom: 0 });
+
     const greetingInterval = setInterval(() => {
       setGreetingIndex((prevIndex) => (prevIndex + 1) % greetings.length);
     }, 4000);
@@ -33,7 +36,7 @@ export default function Landing() {
   }, []);
 
   const handleDragEnd = (event: any, info: any) => {
-    if (info.offset.y < -100) {
+    if (info.offset.y < -150) { // Increased threshold for navigation
       router.push('/new-entry');
     }
   };
@@ -44,8 +47,8 @@ export default function Landing() {
         className="h-full w-full flex flex-col items-center justify-center text-center cursor-grab"
         style={{ y }}
         drag="y"
-        dragConstraints={{ top: -300, bottom: 0 }}
-        dragElastic={0.1}
+        dragConstraints={dragConstraints}
+        dragElastic={{ top: 0.1, bottom: 1 }}
         onDragEnd={handleDragEnd}
         whileTap={{ cursor: 'grabbing' }}
       >

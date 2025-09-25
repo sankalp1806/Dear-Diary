@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Bell, X, Check } from 'lucide-react';
+import { ChevronLeft, X, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const AudioWaveform = ({ isRecording }: { isRecording: boolean }) => {
@@ -134,8 +134,6 @@ export default function VoiceChatPage() {
   }
 
   const handleSave = () => {
-    // Navigate back and pass the transcript. A more robust solution would use a state manager.
-    // For now we use local storage as a simple bridge.
     if (typeof window !== 'undefined' && transcript) {
         localStorage.setItem('voice-transcript', transcript);
     }
@@ -159,9 +157,7 @@ export default function VoiceChatPage() {
             <ChevronLeft className="w-7 h-7" />
           </Button>
           <h1 className="text-lg font-semibold">I'm All Ears...</h1>
-          <Button variant="ghost" size="icon">
-            <Bell className="w-6 h-6" />
-          </Button>
+          <div className="w-10"></div>
         </header>
 
         <main className="flex-1 px-6 py-4 flex flex-col justify-center">

@@ -147,9 +147,6 @@ export default function Dashboard() {
 
       <footer className="p-4 bg-transparent sticky bottom-0">
           <Link href="/new-entry" className="flex-1">
-            <Button className="w-full h-14 bg-blue-600 text-white rounded-full shadow-lg text-lg">
-              New note
-            </Button>
           </Link>
       </footer>
     </div>
