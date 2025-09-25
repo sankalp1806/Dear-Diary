@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useActionState } from 'react';
+import React, { useState, useEffect, useActionState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,6 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +24,7 @@ export default function NewEntry() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [promptsState, generatePromptsFormAction] = useActionState(
     generatePromptsAction,
@@ -85,10 +81,16 @@ export default function NewEntry() {
   };
 
   const handleAttachment = () => {
-    toast({
-      title: 'Feature coming soon!',
-      description: 'The ability to add attachments is not yet available.',
-    });
+    fileInputRef.current?.click();
+  };
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      toast({
+        title: 'File attached!',
+        description: `${file.name} has been attached.`,
+      });
+    }
   };
 
   const handleAIAction = () => {
@@ -119,21 +121,16 @@ export default function NewEntry() {
         </header>
 
         <main className="flex-1 px-6 py-4 flex flex-col">
-          <div className="flex items-center gap-2 mb-6 flex-wrap">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="rounded-full bg-white border-gray-200"
-                >
-                  <Clock className="w-4 h-4 mr-2" />
-                  {currentDate
-                    ? format(currentDate, 'MMM d, h:mm a')
-                    : 'Loading...'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent>Date/Time Picker placeholder</PopoverContent>
-            </Popover>
+        <div className="flex items-center gap-2 mb-6 flex-wrap">
+            <Button
+              variant="outline"
+              className="rounded-full bg-white border-gray-200"
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              {currentDate
+                ? format(currentDate, 'MMM d, h:mm a')
+                : 'Loading...'}
+            </Button>
           </div>
 
           <div className="flex-1 flex flex-col">
@@ -171,6 +168,12 @@ export default function NewEntry() {
             <Button variant="ghost" size="icon" className="text-gray-600" onClick={handleAttachment}>
               <Paperclip className="w-6 h-6" />
             </Button>
+             <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+            />
             <div className="h-6 w-px bg-gray-200" />
             <Button variant="ghost" size="icon" className="text-gray-600">
               <Smile className="w-6 h-6" />

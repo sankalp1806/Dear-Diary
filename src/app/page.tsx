@@ -51,6 +51,7 @@ export default function Landing() {
         dragElastic={{ top: 0.1, bottom: 1 }}
         onDragEnd={handleDragEnd}
         whileTap={{ cursor: 'grabbing' }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       >
         <div className="flex-1 flex flex-col items-center justify-center w-full">
           {/* Animated Title */}
