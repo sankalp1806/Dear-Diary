@@ -45,134 +45,74 @@ const sentimentToMood = (sentiment: string) => {
 
 
 const MoodEmoji = ({ mood }: { mood: string }) => {
+  const emojiStyle: React.CSSProperties = {
+    width: '80%',
+    height: '80%',
+    transform: 'translateY(-2px)',
+  };
+
   switch (mood) {
-    case '😊':
+    case '😊': // Smiling face with smiling eyes
+    case '😃': // Grinning face with big eyes
       return (
-        <div className="w-full h-full rounded-full flex items-center justify-center text-black text-2xl font-bold">
-          :D
-        </div>
+         <svg viewBox="0 0 128 128" style={emojiStyle}>
+          <foreignObject width="128" height="128">
+            <div className="flex items-center justify-center h-full">
+              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '96px' }}>😄</span>
+            </div>
+          </foreignObject>
+        </svg>
       );
-    case '😃':
+    case '🙂': // Slightly smiling face
        return (
-        <div className="w-full h-full rounded-full flex items-center justify-center text-black text-2xl font-bold">
-          :D
-        </div>
+        <svg viewBox="0 0 128 128" style={emojiStyle}>
+          <foreignObject width="128" height="128">
+            <div className="flex items-center justify-center h-full">
+              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '96px' }}>🙂</span>
+            </div>
+          </foreignObject>
+        </svg>
       );
-    case '🙂':
-      return (
-        <div className="w-full h-full rounded-full flex items-center justify-center text-black text-xl">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M8 14C8.5 15.5 10.5 16.5 12 16.5C13.5 16.5 15.5 15.5 16 14"
-              stroke="black"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <path
-              d="M9 9.5C9 10.0523 8.55228 10.5 8 10.5C7.44772 10.5 7 10.0523 7 9.5C7 8.94772 7.44772 8.5 8 8.5C8.55228 8.5 9 8.94772 9 9.5Z"
-              fill="black"
-            />
-            <path
-              d="M15 9.5C15 10.0523 14.5523 10.5 14 10.5C13.4477 10.5 13 10.0523 13 9.5C13 8.94772 13.4477 8.5 14 8.5C14.5523 8.5 15 8.94772 15 9.5Z"
-              fill="black"
-            />
-          </svg>
-        </div>
+    case '😐': // Neutral face
+       return (
+        <svg viewBox="0 0 128 128" style={emojiStyle}>
+          <foreignObject width="128" height="128">
+            <div className="flex items-center justify-center h-full">
+              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '96px' }}>😐</span>
+            </div>
+          </foreignObject>
+        </svg>
       );
-    case '😐':
+    case '😟': // Worried face
       return (
-        <div className="w-full h-full rounded-full flex items-center justify-center text-black text-xl">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M8 14H16"
-              stroke="black"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <path
-              d="M9 9.5C9 10.0523 8.55228 10.5 8 10.5C7.44772 10.5 7 10.0523 7 9.5C7 8.94772 7.44772 8.5 8 8.5C8.55228 8.5 9 8.94772 9 9.5Z"
-              fill="black"
-            />
-            <path
-              d="M15 9.5C15 10.0523 14.5523 10.5 14 10.5C13.4477 10.5 13 10.0523 13 9.5C13 8.94772 13.4477 8.5 14 8.5C14.5523 8.5 15 8.94772 15 9.5Z"
-              fill="black"
-            />
-          </svg>
-        </div>
+        <svg viewBox="0 0 128 128" style={emojiStyle}>
+          <foreignObject width="128" height="128">
+            <div className="flex items-center justify-center h-full">
+              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '96px' }}>😟</span>
+            </div>
+          </foreignObject>
+        </svg>
       );
-    case '😟':
-      return (
-        <div className="w-full h-full rounded-full flex items-center justify-center text-black text-xl">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M8 15C8.5 13.5 10.5 12.5 12 12.5C13.5 12.5 15.5 13.5 16 15"
-              stroke="black"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <path
-              d="M9 9.5C9 10.0523 8.55228 10.5 8 10.5C7.44772 10.5 7 10.0523 7 9.5C7 8.94772 7.44772 8.5 8 8.5C8.55228 8.5 9 8.94772 9 9.5Z"
-              fill="black"
-            />
-            <path
-              d="M15 9.5C15 10.0523 14.5523 10.5 14 10.5C13.4477 10.5 13 10.0523 13 9.5C13 8.94772 13.4477 8.5 14 8.5C14.5523 8.5 15 8.94772 15 9.5Z"
-              fill="black"
-            />
-          </svg>
-        </div>
-      );
-    case '😠':
-      return (
-        <div className="w-full h-full rounded-full flex items-center justify-center text-black text-xl">
-          <svg
-            width="24"
-            height="24"
-            viewBox="uncal24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M8 16C8.5 14.5 10.5 13.5 12 13.5C13.5 13.5 15.5 14.5 16 16"
-              stroke="black"
-              strokeWidth="2"
-              strokeLinecap="round"
-              transform="translate(0, -2)"
-            />
-            <path
-              d="M9.5 10C9.5 10.5523 9.05228 11 8.5 11C7.94772 11 7.5 10.5523 7.5 10"
-              stroke="black"
-              strokeWidth="1.5"
-              transform="rotate(20 9.5 10)"
-            />
-            <path
-              d="M14.5 10C14.5 10.5523 14.0523 11 13.5 11C12.9477 11 12.5 10.5523 12.5 10"
-              stroke="black"
-              strokeWidth="1.5"
-              transform="rotate(-20 14.5 10)"
-            />
-          </svg>
-        </div>
+    case '😠': // Angry face
+       return (
+        <svg viewBox="0 0 128 128" style={emojiStyle}>
+          <foreignObject width="128" height="128">
+            <div className="flex items-center justify-center h-full">
+              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '96px' }}>😠</span>
+            </div>
+          </foreignObject>
+        </svg>
       );
     default:
-      return null;
+      return (
+        <svg viewBox="0 0 128 128" style={emojiStyle}>
+          <foreignObject width="128" height="128">
+            <div className="flex items-center justify-center h-full">
+              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '96px' }}>🙂</span>
+            </div>
+          </foreignObject>
+        </svg>
+      );
   }
 };
 
