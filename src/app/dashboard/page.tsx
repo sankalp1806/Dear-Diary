@@ -27,28 +27,27 @@ import html2canvas from 'html2canvas';
 const sentimentToMood = (sentiment: string) => {
   switch (sentiment.toLowerCase()) {
     case 'positive':
-      return { emoji: '😊', color: 'bg-yellow-300' };
+      return { emoji: '😊', color: '' };
     case 'very positive':
-      return { emoji: '😃', color: 'bg-orange-300' };
+      return { emoji: '😃', color: '' };
     case 'negative':
-      return { emoji: '😟', color: 'bg-teal-500' };
+      return { emoji: '😟', color: '' };
     case 'very negative':
-      return { emoji: '😠', color: 'bg-slate-500' };
+      return { emoji: '😠', color: '' };
     case 'neutral':
-      return { emoji: '😐', color: 'bg-green-400' };
+      return { emoji: '😐', color: '' };
     case 'mixed':
-        return { emoji: '🙂', color: 'bg-lime-300' };
+        return { emoji: '🙂', color: '' };
     default:
-      return { emoji: '🙂', color: 'bg-lime-300' };
+      return { emoji: '🙂', color: '' };
   }
 };
 
 
 const MoodEmoji = ({ mood }: { mood: string }) => {
   const emojiStyle: React.CSSProperties = {
-    width: '80%',
-    height: '80%',
-    transform: 'translateY(-2px)',
+    width: '100%',
+    height: '100%',
   };
 
   switch (mood) {
@@ -329,7 +328,7 @@ export default function Dashboard() {
                   <div
                     className={cn(
                       'w-10 h-10 rounded-full flex items-center justify-center',
-                      mood && hasEntry ? mood.color : 'bg-gray-200'
+                       !mood || !hasEntry ? 'bg-gray-200' : ''
                     )}
                   >
                     {mood && hasEntry && <MoodEmoji mood={mood.emoji} />}
