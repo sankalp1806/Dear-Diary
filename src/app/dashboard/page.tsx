@@ -318,9 +318,10 @@ export default function Dashboard() {
             // Client-side only render
             const mood = getMoodForDate(day);
             const hasEntry = hasEntryForDate(day);
+            const dateString = format(day, 'yyyy-MM-dd');
             const linkHref = hasEntry
-              ? `/timeline?date=${format(day, 'yyyy-MM-dd')}`
-              : '/new-entry';
+              ? `/timeline?date=${dateString}`
+              : `/new-entry?date=${dateString}`;
 
             return (
               <Link href={linkHref} key={day.toString()} passHref>

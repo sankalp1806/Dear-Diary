@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useActionState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,17 +13,18 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { generatePromptsAction } from '@/app/actions';
 
 export default function NewEntry() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+  const [entryDate, setEntryDate] = useState<Date>(new Date());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [promptsState, generatePromptsFormAction] = useActionState(
@@ -32,10 +33,22 @@ export default function NewEntry() {
   );
 
   useEffect(() => {
-    setCurrentDate(new Date());
-    const timer = setInterval(() => setCurrentDate(new Date()), 60000);
+    const dateStr = searchParams.get('date');
+    let initialDate = new Date();
+    if (dateStr) {
+      const parsedDate = parseISO(dateStr);
+      if (isValid(parsedDate)) {
+        initialDate = parsedDate;
+      }
+    }
+     // Set time to current time for the date
+    const now = new Date();
+    initialDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+    setEntryDate(initialDate);
+
+    const timer = setInterval(() => setEntryDate(new Date()), 60000);
     return () => clearInterval(timer);
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -52,6 +65,9 @@ export default function NewEntry() {
         const entryToEdit = JSON.parse(entryToEditJson);
         setTitle(entryToEdit.title);
         setContent(entryToEdit.content);
+        if (entryToEdit.entry_date) {
+            setEntryDate(new Date(entryToEdit.entry_date));
+        }
         // Clean up so it doesn't load again
         localStorage.removeItem('entryToEdit');
       }
@@ -92,7 +108,7 @@ export default function NewEntry() {
         // Update existing entry
         const updatedEntries = existingEntries.map((entry: any) => 
           entry.id === entryToEditId 
-            ? { ...entry, title: title || 'Untitled', content }
+            ? { ...entry, title: title || 'Untitled', content, entry_date: entryDate.toISOString() }
             : entry
         );
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
@@ -103,7 +119,7 @@ export default function NewEntry() {
           id: new Date().toISOString(),
           title: title || 'Untitled',
           content: content,
-          entry_date: new Date().toISOString(),
+          entry_date: entryDate.toISOString(),
           mood_score: Math.floor(Math.random() * 8) + 1, // Mock mood score
           category: 'feelings'
         };
@@ -115,7 +131,7 @@ export default function NewEntry() {
     toast({
       title: 'Entry saved!',
     });
-    router.push(`/timeline?date=${format(new Date(), 'yyyy-MM-dd')}`);
+    router.push(`/timeline?date=${format(entryDate, 'yyyy-MM-dd')}`);
   };
 
   const handleAttachment = () => {
@@ -165,8 +181,8 @@ export default function NewEntry() {
               className="rounded-full bg-white border-gray-200"
             >
               <Clock className="w-4 h-4 mr-2" />
-              {currentDate
-                ? format(currentDate, 'MMM d, h:mm a')
+              {entryDate
+                ? format(entryDate, 'MMM d, h:mm a')
                 : 'Loading...'}
             </Button>
           </div>
