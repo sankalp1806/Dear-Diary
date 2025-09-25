@@ -6,8 +6,8 @@
  * @fileOverview AI-driven insights from journal entries.
  *
  * - provideEmotionalInsights - A function to analyze journal entries and provide personalized emotional insights.
- * - ProvideEmotionalInsightsInput - The input type for the provideEmotionalInsights function.
- * - ProvideEmotionalInsightsOutput - The return type for the provideEmotionalInsights function.
+ * - ProvideEmotionalInsightsInput - The input type for the provideEmotionalinsights function.
+ * - ProvideEmotionalInsightsOutput - The return type for the provideEmotionalinsights function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -20,6 +20,29 @@ const ProvideEmotionalInsightsInputSchema = z.object({
 export type ProvideEmotionalInsightsInput = z.infer<typeof ProvideEmotionalInsightsInputSchema>;
 
 const ProvideEmotionalInsightsOutputSchema = z.object({
+  emotion: z.enum([
+    'Happy',
+    'Excited',
+    'Grateful',
+    'Content',
+    'Loving',
+    'Romantic',
+    'Amused',
+    'Joyful',
+    'Optimistic',
+    'Proud',
+    'Neutral',
+    'Sad',
+    'Angry',
+    'Anxious',
+    'Worried',
+    'Stressed',
+    'Tired',
+    'Confused',
+    'Lonely',
+    'Guilty',
+    'Disappointed',
+  ]).describe('The dominant emotion conveyed in the journal entry.'),
   overallSentiment: z.string().describe('The overall sentiment of the journal entry (e.g., positive, negative, neutral).'),
   keyEmotions: z.array(z.string()).describe('A list of key emotions expressed in the journal entry.'),
   emotionalPatterns: z.string().describe('A description of any emotional patterns identified in the journal entry.'),
@@ -35,17 +58,13 @@ const provideEmotionalInsightsPrompt = ai.definePrompt({
   name: 'provideEmotionalInsightsPrompt',
   input: {schema: ProvideEmotionalInsightsInputSchema},
   output: {schema: ProvideEmotionalInsightsOutputSchema},
-  prompt: `You are an AI assistant that analyzes journal entries and provides personalized insights about the user's emotions.
-
-  Analyze the following journal entry for emotional content, sentiment, and patterns. Provide personalized insights to help the user better understand their emotional state.
+  prompt: `You are an expert emotion detection AI. Analyze the following journal entry and identify the single, most dominant emotion from the provided list.
 
   Journal Entry:
   {{journalEntry}}
 
-  Consider the user's ID: {{userId}}
-  Output Schema: {{{outputSchema}}}
-
-  Provide your analysis in the format specified by the output schema.`,
+  Your response must be in the format specified by the output schema.
+  The primary 'emotion' field should be your main focus. Also provide the other fields as requested by the schema.`,
 });
 
 const provideEmotionalInsightsFlow = ai.defineFlow(

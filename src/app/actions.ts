@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { categorizeJournalEntry } from '@/ai/flows/categorize-journal-entries';
-import { provideEmotionalInsights } from '@/ai/flows/provide-emotional-insights';
+import { provideEmotionalInsights, type ProvideEmotionalInsightsOutput } from '@/ai/flows/provide-emotional-insights';
 import { generateSelfReflectionPrompts } from '@/ai/flows/generate-self-reflection-prompts';
 import { getBalanceOfLifeInsight } from '@/ai/flows/get-balance-of-life-insight';
 import { getNegativeSourceInsight } from '@/ai/flows/get-negative-source-insight';
@@ -82,9 +82,9 @@ export async function generatePromptsAction(
   }
 }
 
-export async function getSentimentForEntry(entryText: string) {
+export async function getSentimentForEntry(entryText: string): Promise<ProvideEmotionalInsightsOutput | { emotion: string, overallSentiment: string }> {
     if (!entryText || entryText.length < 10) {
-        return { overallSentiment: 'neutral' };
+        return { emotion: 'Neutral', overallSentiment: 'neutral' };
     }
     try {
         const insights = await provideEmotionalInsights({
@@ -94,8 +94,8 @@ export async function getSentimentForEntry(entryText: string) {
         return insights;
     } catch (error) {
         console.error("Error getting sentiment:", error);
-        // Return neutral sentiment as a fallback
-        return { overallSentiment: 'neutral' };
+        // Return neutral as a fallback
+        return { emotion: 'Neutral', overallSentiment: 'neutral' };
     }
 }
 

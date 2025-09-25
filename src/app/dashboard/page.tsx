@@ -26,22 +26,49 @@ import html2canvas from 'html2canvas';
 import NavFooter from '@/components/shared/footer';
 
 // Helper to map sentiment to mood
-const sentimentToMood = (sentiment: string) => {
-  switch (sentiment.toLowerCase()) {
-    case 'positive':
+const emotionToMood = (emotion?: string) => {
+  switch (emotion?.toLowerCase()) {
+    case 'happy':
       return { emoji: '😊', color: '' };
-    case 'very positive':
+    case 'excited':
       return { emoji: '😃', color: '' };
-    case 'negative':
-      return { emoji: '😟', color: '' };
-    case 'very negative':
+    case 'grateful':
+      return { emoji: '🙏', color: '' };
+    case 'content':
+        return { emoji: '😌', color: '' };
+    case 'loving':
+    case 'romantic':
+        return { emoji: '❤️', color: '' };
+    case 'amused':
+        return { emoji: '😂', color: '' };
+    case 'joyful':
+        return { emoji: '🎉', color: '' };
+    case 'optimistic':
+        return { emoji: '👍', color: '' };
+    case 'proud':
+        return { emoji: '🏆', color: '' };
+    case 'sad':
+      return { emoji: '😢', color: '' };
+    case 'angry':
       return { emoji: '😠', color: '' };
+    case 'anxious':
+      return { emoji: '😟', color: '' };
+    case 'worried':
+    case 'stressed':
+        return { emoji: '😥', color: '' };
+    case 'tired':
+        return { emoji: '😴', color: '' };
+    case 'confused':
+        return { emoji: '🤔', color: '' };
+    case 'lonely':
+        return { emoji: '😔', color: '' };
+    case 'guilty':
+        return { emoji: '😅', color: '' };
+    case 'disappointed':
+        return { emoji: '😞', color: '' };
     case 'neutral':
-      return { emoji: '😐', color: '' };
-    case 'mixed':
-        return { emoji: '🙂', color: '' };
     default:
-      return { emoji: '🙂', color: '' };
+      return { emoji: '😐', color: '' };
   }
 };
 
@@ -50,71 +77,15 @@ const MoodEmoji = ({ mood }: { mood: string }) => {
   const emojiStyle: React.CSSProperties = {
     width: '100%',
     height: '100%',
+    fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif',
+    fontSize: '56px', // Adjusted for better fit
   };
 
-  switch (mood) {
-    case '😊': // Smiling face with smiling eyes
-    case '😃': // Grinning face with big eyes
-      return (
-         <svg viewBox="0 0 128 128" style={emojiStyle}>
-          <foreignObject width="128" height="128">
-            <div className="flex items-center justify-center h-full">
-              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '112px' }}>😄</span>
-            </div>
-          </foreignObject>
-        </svg>
-      );
-    case '🙂': // Slightly smiling face
-       return (
-        <svg viewBox="0 0 128 128" style={emojiStyle}>
-          <foreignObject width="128" height="128">
-            <div className="flex items-center justify-center h-full">
-              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '112px' }}>🙂</span>
-            </div>
-          </foreignObject>
-        </svg>
-      );
-    case '😐': // Neutral face
-       return (
-        <svg viewBox="0 0 128 128" style={emojiStyle}>
-          <foreignObject width="128" height="128">
-            <div className="flex items-center justify-center h-full">
-              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '112px' }}>😐</span>
-            </div>
-          </foreignObject>
-        </svg>
-      );
-    case '😟': // Worried face
-      return (
-        <svg viewBox="0 0 128 128" style={emojiStyle}>
-          <foreignObject width="128" height="128">
-            <div className="flex items-center justify-center h-full">
-              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '112px' }}>😟</span>
-            </div>
-          </foreignObject>
-        </svg>
-      );
-    case '😠': // Angry face
-       return (
-        <svg viewBox="0 0 128 128" style={emojiStyle}>
-          <foreignObject width="128" height="128">
-            <div className="flex items-center justify-center h-full">
-              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '112px' }}>😠</span>
-            </div>
-          </foreignObject>
-        </svg>
-      );
-    default:
-      return (
-        <svg viewBox="0 0 128 128" style={emojiStyle}>
-          <foreignObject width="128" height="128">
-            <div className="flex items-center justify-center h-full">
-              <span style={{ fontFamily: 'Apple Color Emoji, Segoe UI Emoji, NotoColorEmoji, sans-serif', fontSize: '112px' }}>🙂</span>
-            </div>
-          </foreignObject>
-        </svg>
-      );
-  }
+  return (
+    <div className="flex items-center justify-center h-full w-full">
+      <span style={emojiStyle}>{mood}</span>
+    </div>
+  );
 };
 
 export default function Dashboard() {
@@ -148,22 +119,14 @@ export default function Dashboard() {
     }
     
     const moods: { [key: string]: { emoji: string; color: string } } = {};
-    const moodScores: { [key: number]: number } = {
-        1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8
-    };
-
+    
     for (const day in dailyEntries) {
         const dayEntries = dailyEntries[day];
         if (dayEntries.length > 0) {
-            const totalScore = dayEntries.reduce((acc, entry) => acc + (moodScores[entry.mood_score] || 4), 0);
-            const avgScore = Math.round(totalScore / dayEntries.length);
-            
-            const moodMap: { [key: number]: string } = {
-                1: 'negative', 2: 'negative', 3: 'negative', 4: 'neutral', 5: 'neutral', 6: 'positive', 7: 'positive', 8: 'positive'
-            };
-
-            const sentiment = moodMap[avgScore] || 'neutral';
-            moods[day] = sentimentToMood(sentiment);
+            // For simplicity, we'll use the emotion from the *first* entry of the day.
+            // A more complex implementation could average moods or show multiple.
+            const primaryEmotion = dayEntries[0].emotion;
+            moods[day] = emotionToMood(primaryEmotion);
         }
     }
 
@@ -179,9 +142,12 @@ export default function Dashboard() {
       calculateDailyMoods();
     };
     window.addEventListener('storage', handleStorageChange);
+    // This event is triggered when entries are updated in other tabs
+    window.addEventListener('journalEntriesChanged', handleStorageChange);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('journalEntriesChanged', handleStorageChange);
     };
   }, [calculateDailyMoods]);
 

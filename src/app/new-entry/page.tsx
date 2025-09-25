@@ -98,7 +98,9 @@ export default function NewEntry() {
     }
 
     const sentimentResult = await getSentimentForEntry(content);
+    const primaryEmotion = sentimentResult?.emotion || 'Neutral';
     const overallSentiment = sentimentResult?.overallSentiment?.toLowerCase() || 'neutral';
+
 
     let mood_score = 4; // Default to neutral
     if (overallSentiment.includes('very positive')) {
@@ -124,7 +126,7 @@ export default function NewEntry() {
         // Update existing entry
         const updatedEntries = existingEntries.map((entry: any) => 
           entry.id === entryToEditId 
-            ? { ...entry, title: title || 'Untitled', content, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score }
+            ? { ...entry, title: title || 'Untitled', content, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score, emotion: primaryEmotion }
             : entry
         );
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
@@ -138,11 +140,14 @@ export default function NewEntry() {
           entry_date: entryDate.toISOString(),
           mood_score: mood_score,
           sentiment: overallSentiment,
+          emotion: primaryEmotion,
           category: 'feelings'
         };
         const updatedEntries = [...existingEntries, newEntry];
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
       }
+      // Dispatch a custom event to notify other components of the change
+      window.dispatchEvent(new CustomEvent('journalEntriesChanged'));
     }
     
     router.push(`/timeline?date=${format(entryDate, 'yyyy-MM-dd')}`);
