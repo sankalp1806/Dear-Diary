@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   format,
   startOfMonth,
@@ -23,42 +23,37 @@ import {
 } from '@/components/ui/dropdown-menu';
 import html2canvas from 'html2canvas';
 
-// Mock data for moods. In a real app, this would come from daily sentiment analysis.
-// Let's assume some days have entries and some don't.
-const mockEntries: { [key: string]: { mood: string } } = {
-  [format(new Date(), 'yyyy-MM-dd')]: { mood: '😊' }, // Today
-  [format(subMonths(new Date(), 0).setDate(15), 'yyyy-MM-dd')]: { mood: '🙂' },
-  [format(subMonths(new Date(), 0).setDate(3), 'yyyy-MM-dd')]: { mood: '😐' },
-  [format(subMonths(new Date(), 0).setDate(21), 'yyyy-MM-dd')]: { mood: '😟' },
-};
-
-const getMockMoodForDate = (date: Date) => {
-  const dateString = format(date, 'yyyy-MM-dd');
-  const entry = mockEntries[dateString];
-
-  if (!entry) {
-    return null; // No entry for this date
+// Helper to map sentiment to mood
+const sentimentToMood = (sentiment: string) => {
+  switch (sentiment.toLowerCase()) {
+    case 'positive':
+      return { emoji: '😊', color: 'bg-yellow-300' };
+    case 'very positive':
+      return { emoji: '😃', color: 'bg-orange-300' };
+    case 'negative':
+      return { emoji: '😟', color: 'bg-teal-500' };
+    case 'very negative':
+      return { emoji: '😠', color: 'bg-slate-500' };
+    case 'neutral':
+      return { emoji: '😐', color: 'bg-green-400' };
+    case 'mixed':
+        return { emoji: '🙂', color: 'bg-lime-300' };
+    default:
+      return { emoji: '🙂', color: 'bg-lime-300' };
   }
-
-  const moods = ['😊', '🙂', '😐', '😟', '😠'];
-  const colors = [
-    'bg-yellow-300', // Happy
-    'bg-lime-300', // Calm
-    'bg-green-400', // Neutral
-    'bg-teal-500', // Anxious
-    'bg-slate-500', // Angry
-  ];
-  const moodIndex = moods.indexOf(entry.mood);
-  return {
-    emoji: entry.mood,
-    color: colors[moodIndex] || colors[2],
-  };
 };
+
 
 const MoodEmoji = ({ mood }: { mood: string }) => {
   switch (mood) {
     case '😊':
       return (
+        <div className="w-full h-full rounded-full flex items-center justify-center text-black text-2xl font-bold">
+          :D
+        </div>
+      );
+    case '😃':
+       return (
         <div className="w-full h-full rounded-full flex items-center justify-center text-black text-2xl font-bold">
           :D
         </div>
@@ -181,15 +176,78 @@ const MoodEmoji = ({ mood }: { mood: string }) => {
   }
 };
 
+
 export default function Dashboard() {
-  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [isClient, setIsClient] = useState(false);
+  const [dailyMoods, setDailyMoods] = useState<{ [key: string]: { emoji: string; color: string } }>({});
+
   const calendarRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setCurrentDate(new Date());
-    setIsClient(true);
+  const calculateDailyMoods = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+
+    const storedEntriesJson = localStorage.getItem('journalEntries');
+    const entries = storedEntriesJson ? JSON.parse(storedEntriesJson) : [];
+    
+    if (entries.length === 0) {
+      setDailyMoods({});
+      return;
+    }
+
+    const dailyEntries: { [key: string]: any[] } = {};
+    for (const entry of entries) {
+      const day = format(new Date(entry.entry_date), 'yyyy-MM-dd');
+      if (!dailyEntries[day]) {
+        dailyEntries[day] = [];
+      }
+      dailyEntries[day].push(entry);
+    }
+    
+    const moods: { [key: string]: { emoji: string; color: string } } = {};
+    const moodScores: { [key: number]: number } = {
+        1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8
+    };
+
+    for (const day in dailyEntries) {
+        const dayEntries = dailyEntries[day];
+        if (dayEntries.length > 0) {
+            const totalScore = dayEntries.reduce((acc, entry) => acc + (moodScores[entry.mood_score] || 4), 0);
+            const avgScore = Math.round(totalScore / dayEntries.length);
+            
+            const moodMap: { [key: number]: string } = {
+                1: 'negative', 2: 'negative', 3: 'negative', 4: 'neutral', 5: 'neutral', 6: 'positive', 7: 'positive', 8: 'positive'
+            };
+
+            const sentiment = moodMap[avgScore] || 'neutral';
+            moods[day] = sentimentToMood(sentiment);
+        }
+    }
+
+    setDailyMoods(moods);
   }, []);
+
+  useEffect(() => {
+    setIsClient(true);
+    calculateDailyMoods();
+
+    // Listen for changes in localStorage from other tabs/windows
+    const handleStorageChange = () => {
+      calculateDailyMoods();
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [calculateDailyMoods]);
+
+
+  const getMoodForDate = (date: Date) => {
+    const dateString = format(date, 'yyyy-MM-dd');
+    return dailyMoods[dateString] || null;
+  };
+
 
   const handleShare = async () => {
     if (calendarRef.current) {
@@ -221,14 +279,6 @@ export default function Dashboard() {
     }
   };
 
-  if (!isClient || !currentDate) {
-    return (
-      <div className="h-screen w-full bg-[#F3F7F2] flex items-center justify-center">
-        {/* You can add a loading spinner here */}
-      </div>
-    );
-  }
-
   const firstDayOfMonth = startOfMonth(currentDate);
   const lastDayOfMonth = endOfMonth(currentDate);
   const daysInMonth = eachDayOfInterval({
@@ -244,6 +294,13 @@ export default function Dashboard() {
   const months = Array.from({ length: 12 }, (_, i) =>
     format(new Date(currentDate.getFullYear(), i), 'MMMM')
   );
+  
+  const hasEntryForDate = (date: Date) => {
+     if (typeof window === 'undefined') return false;
+     const storedEntriesJson = localStorage.getItem('journalEntries');
+     const entries = storedEntriesJson ? JSON.parse(storedEntriesJson) : [];
+     return entries.some((entry: any) => format(new Date(entry.entry_date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'));
+  };
 
   return (
     <div
@@ -297,8 +354,8 @@ export default function Dashboard() {
           ))}
 
           {daysInMonth.map((day) => {
-            const mood = getMockMoodForDate(day);
-            const hasEntry = !!mood;
+            const mood = getMoodForDate(day);
+            const hasEntry = hasEntryForDate(day);
             const linkHref = hasEntry
               ? `/timeline?date=${format(day, 'yyyy-MM-dd')}`
               : '/new-entry';
@@ -309,10 +366,10 @@ export default function Dashboard() {
                   <div
                     className={cn(
                       'w-10 h-10 rounded-full flex items-center justify-center',
-                      mood ? mood.color : 'bg-gray-200'
+                      mood && hasEntry ? mood.color : 'bg-gray-200'
                     )}
                   >
-                    {mood && <MoodEmoji mood={mood.emoji} />}
+                    {mood && hasEntry && <MoodEmoji mood={mood.emoji} />}
                   </div>
                   <span
                     className={cn(
@@ -337,3 +394,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+    
