@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 import {
   format,
   startOfMonth,
@@ -115,12 +116,24 @@ const MoodEmoji = ({ mood }: { mood: string }) => {
   }
 };
 
+const NavLink = ({ href, icon: Icon, label, activePath }: { href: string, icon: React.ElementType, label: string, activePath: string }) => {
+    const isActive = activePath === href;
+    return (
+        <Link href={href} className={cn("flex flex-col items-center text-xs gap-1 relative", isActive ? 'text-white' : 'text-white/70')}>
+            {isActive && <div className="absolute top-[-4px] h-1 w-6 rounded-full bg-cyan-400"></div>}
+            <Icon />
+            <span>{label}</span>
+        </Link>
+    );
+};
+
 
 export default function Dashboard() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isClient, setIsClient] = useState(false);
   const [dailyMoods, setDailyMoods] = useState<{ [key: string]: { emoji: string; color: string } }>({});
   const [entriesByDate, setEntriesByDate] = useState<{ [key: string]: boolean }>({});
+  const pathname = usePathname();
 
   const calendarRef = useRef<HTMLDivElement>(null);
 
@@ -355,25 +368,12 @@ export default function Dashboard() {
        <footer className="fixed bottom-4 left-4 right-4 z-50">
         <div className="relative max-w-sm mx-auto">
           <div className="bg-black/70 backdrop-blur-lg rounded-full p-2 flex items-center justify-around text-white">
-            <Link href="/dashboard" className="flex flex-col items-center text-xs gap-1 relative">
-              <div className="absolute top-[-4px] h-1 w-6 rounded-full bg-cyan-400"></div>
-              <Home />
-              <span>Home</span>
-            </Link>
-            <Link href="#" className="flex flex-col items-center text-xs gap-1 opacity-70">
-              <Compass />
-              <span>Explore</span>
-            </Link>
+            <NavLink href="/dashboard" icon={Home} label="Home" activePath={pathname} />
+            <NavLink href="/explore" icon={Compass} label="Explore" activePath={pathname} />
             {/* Placeholder for the middle button */}
             <div className="w-12 h-12"></div>
-            <Link href="#" className="flex flex-col items-center text-xs gap-1 opacity-70">
-              <LineChart />
-              <span>Insights</span>
-            </Link>
-            <Link href="/timeline" className="flex flex-col items-center text-xs gap-1 opacity-70">
-              <Search />
-              <span>History</span>
-            </Link>
+            <NavLink href="/insights" icon={LineChart} label="Insights" activePath={pathname} />
+            <NavLink href="/timeline" icon={Search} label="History" activePath={pathname} />
           </div>
           <Link href="/new-entry">
             <div className="absolute top-[-24px] left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-gradient-to-br from-cyan-400 to-purple-600 flex items-center justify-center cursor-pointer shadow-lg">
