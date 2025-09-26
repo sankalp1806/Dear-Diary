@@ -29,10 +29,15 @@ import { getBalanceInsightAction, getNegativityInsightAction, getTriggersInsight
 import type { GetBalanceOfLifeInsightOutput } from '@/ai/flows/get-balance-of-life-insight';
 
 
+interface ChatMessage {
+  sender: 'user' | 'ai';
+  text: string;
+}
+
 interface JournalEntry {
   id: string;
   title: string;
-  content: string;
+  content: string | ChatMessage[];
   entry_date: string;
   mood_score: number;
   category: string;
@@ -79,7 +84,14 @@ const processJournalData = (entries: JournalEntry[]): InsightsData | null => {
   }
 
   const totalJournals = entries.length;
-  const totalWords = entries.reduce((acc, entry) => acc + (entry.content?.split(' ').length || 0), 0);
+  const totalWords = entries.reduce((acc, entry) => {
+    if (typeof entry.content === 'string') {
+      return acc + (entry.content?.split(' ').length || 0);
+    } else if (Array.isArray(entry.content)) {
+      return acc + entry.content.reduce((chatAcc, message) => chatAcc + (message.text?.split(' ').length || 0), 0);
+    }
+    return acc;
+  }, 0);
   
   let positiveCount = 0;
   let negativeCount = 0;
