@@ -37,6 +37,7 @@ interface JournalEntry {
   mood_score: number;
   category: string;
   sentiment?: string;
+  emotion?: string;
 }
 
 interface InsightsData {
@@ -50,8 +51,8 @@ interface InsightsData {
 }
 
 const moodToEmotionMap: { [key:number]: string } = {
-  1: 'Apathetic',
-  2: 'Angry',
+  1: 'Angry',
+  2: 'Sad',
   3: 'Anxious',
   4: 'Neutral',
   5: 'Calm',
@@ -67,7 +68,7 @@ const emotionDetails: { [key: string]: { icon: React.ReactNode, color: string } 
     'Calm': { icon: <Smile className="w-5 h-5 text-gray-500" />, color: 'bg-blue-400' },
     'Neutral': { icon: <Meh className="w-5 h-5 text-gray-500" />, color: 'bg-amber-600' },
     'Anxious': { icon: <Frown className="w-5 h-5 text-gray-500" />, color: 'bg-purple-500' },
-    'Apathetic': { icon: <Frown className="w-5 h-5 text-gray-500" />, color: 'bg-indigo-500' },
+    'Sad': { icon: <Frown className="w-5 h-5 text-gray-500" />, color: 'bg-indigo-500' },
     'Angry': { icon: <Angry className="w-5 h-5 text-gray-500" />, color: 'bg-red-500' },
 };
 
@@ -93,13 +94,15 @@ const processJournalData = (entries: JournalEntry[]): InsightsData | null => {
       if (entry.mood_score < 4) negativeCount++;
     }
     
-    const emotion = moodToEmotionMap[entry.mood_score];
+    const emotion = entry.emotion || moodToEmotionMap[entry.mood_score] || 'Neutral';
     if (emotion) {
       emotionFrequency[emotion] = (emotionFrequency[emotion] || 0) + 1;
     }
   });
 
-  const mostFrequentEmotion = Object.keys(emotionFrequency).reduce((a, b) => emotionFrequency[a] > emotionFrequency[b] ? a : b, 'Neutral');
+  const mostFrequentEmotion = Object.keys(emotionFrequency).length > 0
+    ? Object.keys(emotionFrequency).reduce((a, b) => emotionFrequency[a] > emotionFrequency[b] ? a : b)
+    : 'Neutral';
 
   const endDate = new Date();
   const startDate = subDays(endDate, 6);
@@ -279,7 +282,8 @@ export default function InsightsPage() {
 
     const sortedEmotions = Object.entries(insights?.emotionFrequency || {})
         .sort(([, a], [, b]) => b - a)
-        .map(([emotion]) => emotion);
+        .map(([emotion]) => emotion)
+        .filter(emotion => emotionDetails[emotion]);
 
     if (!isClient) {
         return (
@@ -327,7 +331,7 @@ export default function InsightsPage() {
                             <ResponsiveContainer>
                                 <LineChart data={insights.weeklyMoodData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                                     <XAxis dataKey="date" tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} />
-                                    <YAxis hide={true} domain={[0, 8]}/>
+                                    <YAxis hide={true} domain={[1, 8]}/>
                                     <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(139, 92, 246, 0.3)', strokeWidth: 2, strokeDasharray: '3 3' }} />
                                     <Line type="monotone" dataKey="mood" stroke="#8B5CF6" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#8B5CF6' }}/>
                                 </LineChart>
@@ -482,6 +486,4 @@ export default function InsightsPage() {
             <NavFooter />
         </div>
     );
-
-    
 }
