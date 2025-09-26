@@ -54,19 +54,20 @@ export default function NewEntry() {
     const view = searchParams.get('view');
     setIsViewMode(view === 'true');
 
-    let initialDate = new Date();
-    if (dateStr) {
-      const parsedDate = parseISO(dateStr);
-      if (isValid(parsedDate)) {
-        initialDate = parsedDate;
-      }
+    // If we are not viewing an existing entry, set up a new one
+    if (view !== 'true') {
+        let initialDate = new Date();
+        if (dateStr) {
+            const parsedDate = parseISO(dateStr);
+            if (isValid(parsedDate)) {
+                initialDate = parsedDate;
+            }
+        }
+        // Set time to current time for the date
+        const now = new Date();
+        initialDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+        setEntryDate(initialDate);
     }
-     // Set time to current time for the date
-    const now = new Date();
-    initialDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
-    setEntryDate(initialDate);
-
-    // No need for a timer to update the date every minute for a new entry
   }, [searchParams]);
 
   useEffect(() => {
@@ -84,7 +85,7 @@ export default function NewEntry() {
         const entryToEdit = JSON.parse(entryToEditJson);
         setTitle(entryToEdit.title);
         setContent(entryToEdit.content);
-        if (entryToEdit.entry_date) {
+        if (entryToEdit.entry_date && isValid(new Date(entryToEdit.entry_date))) {
             setEntryDate(new Date(entryToEdit.entry_date));
         }
         // Clean up so it doesn't load again on new entries unless it's for editing
@@ -355,9 +356,12 @@ export default function NewEntry() {
                 />
               </div>
           ) : (
-            <p className="text-center text-gray-400 text-sm mb-3">
-                Tap to continue your journal!
-            </p>
+            <form action={generatePromptsFormAction}>
+                <input type="hidden" name="entry" value={content} />
+                 <p className="text-center text-gray-400 text-sm mb-3">
+                    Tap to continue your journal!
+                </p>
+            </form>
           )}
 
           <div className="bg-white rounded-full shadow-lg p-2 flex items-center justify-around mt-3">
