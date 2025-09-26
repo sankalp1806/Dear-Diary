@@ -26,7 +26,7 @@ const EntryItem = React.memo(({ entry, onDelete, onEdit }: { entry: any, onDelet
         </span>
         <div className="w-px flex-1 bg-gray-200 my-2"></div>
       </div>
-      <div className="flex-1 overflow-hidden" onClick={() => onEdit(entry.id)}>
+      <div className="flex-1 overflow-hidden">
         <div className="relative">
           <motion.div
             drag="x"
@@ -34,6 +34,7 @@ const EntryItem = React.memo(({ entry, onDelete, onEdit }: { entry: any, onDelet
             dragElastic={0.2}
             className="relative z-10 bg-white rounded-xl shadow-sm w-full transition-shadow duration-300 hover:shadow-md cursor-pointer"
             whileHover={{ scale: 1.02 }}
+            onTap={() => onEdit(entry.id)}
           >
             <div className=" p-4">
               <div className="flex items-start gap-3">
