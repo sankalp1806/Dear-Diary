@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -51,6 +51,7 @@ interface InsightsData {
 }
 
 const moodToEmotionMap: { [key:number]: string } = {
+  0: 'No entries',
   1: 'Apathetic',
   2: 'Sad',
   3: 'Angry',
@@ -161,10 +162,7 @@ const processJournalData = (entries: JournalEntry[]): InsightsData | null => {
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const moodValue = payload[0].value;
-      let moodLabel = 'No entries';
-      if (moodValue > 0) {
-        moodLabel = moodToEmotionMap[Math.round(moodValue)] || 'Apathetic';
-      }
+      let moodLabel = moodToEmotionMap[Math.round(moodValue)] || 'Apathetic';
       return (
         <div className="bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-lg border border-gray-200">
           <p className="font-bold text-gray-700">{label}</p>
@@ -220,11 +218,11 @@ const InsightDialog = ({ trigger, title, content, onOpen }: { trigger: React.Rea
         <DialogTrigger asChild>
             {trigger}
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent className="max-h-[80vh] flex flex-col">
             <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
             </DialogHeader>
-            <div>{content}</div>
+            <div className="overflow-y-auto">{content}</div>
         </DialogContent>
     </Dialog>
 );
@@ -273,7 +271,6 @@ const TriggerCard = ({ title, character }: { title: string, character: React.Rea
 );
 
 export default function InsightsPage() {
-    const [insights, setInsights] = useState<InsightsData | null>(null);
     const [isClient, setIsClient] = useState(false);
     const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
 
@@ -288,8 +285,9 @@ export default function InsightsPage() {
       const storedEntriesJson = localStorage.getItem('journalEntries');
       const entries: JournalEntry[] = storedEntriesJson ? JSON.parse(storedEntriesJson) : [];
       setJournalEntries(entries);
-      setInsights(processJournalData(entries));
     }, []);
+
+    const insights = useMemo(() => processJournalData(journalEntries), [journalEntries]);
 
     const fetchInsight = async (type: 'balance' | 'negativity' | 'triggers') => {
         setIsLoadingInsight(true);
@@ -308,10 +306,10 @@ export default function InsightsPage() {
         setIsLoadingInsight(false);
     };
 
-    const sortedEmotions = Object.entries(insights?.emotionFrequency || {})
+    const sortedEmotions = useMemo(() => Object.entries(insights?.emotionFrequency || {})
         .sort(([, a], [, b]) => b - a)
         .map(([emotion]) => emotion)
-        .filter(emotion => emotionDetails[emotion]);
+        .filter(emotion => emotionDetails[emotion]), [insights]);
 
     if (!isClient) {
         return (
@@ -418,18 +416,12 @@ export default function InsightsPage() {
                     </section>
 
                     <section className="space-y-4">
-                        <Dialog onOpenChange={(open) => open && fetchInsight('balance')}>
-                            <DialogTrigger asChild>
-                                <button className="w-full">
-                                    <BalanceCard />
-                                </button>
-                            </DialogTrigger>
-                            <DialogContent className="max-h-[80vh] flex flex-col">
-                                <DialogHeader>
-                                    <DialogTitle>The Balance of Life Today</DialogTitle>
-                                </DialogHeader>
-                                <div className="overflow-y-auto">
-                                {isLoadingInsight ? (
+                       <InsightDialog
+                            trigger={<BalanceCard />}
+                            title="The Balance of Life Today"
+                            onOpen={() => fetchInsight('balance')}
+                            content={
+                                isLoadingInsight ? (
                                     <p>Loading insight...</p>
                                 ) : (
                                     <div className="space-y-4">
@@ -443,69 +435,58 @@ export default function InsightsPage() {
                                             </div>
                                         )}
                                     </div>
-                                )}
-                                </div>
-                            </DialogContent>
-                        </Dialog>
+                                )
+                            }
+                        />
 
                         <div className="grid grid-cols-2 gap-4">
-                           <Dialog onOpenChange={(open) => open && fetchInsight('negativity')}>
-                                <DialogTrigger asChild>
-                                    <button className="w-full h-full">
-                                        <TriggerCard 
-                                            title="Your source of negativity" 
-                                            character={
-                                                 <svg width="80" height="80" viewBox="0 0 100 100">
-                                                    <path d="M 85.3,63.2 C 94.6,47.4 89.2,27.5 73.4,18.2 C 57.6,8.9 37.7,14.3 28.4,30.1 C 19.1,45.9 24.5,65.8 40.3,75.1 C 56.1,84.4 76,79 85.3,63.2 Z" fill="#A5B4FC"></path>
-                                                    <rect x="40" y="55" width="30" height="5" fill="black" />
-                                                    <rect x="40" y="45" width="10" height="5" fill="black" />
-                                                    <rect x="60" y="45" width="10" height="5" fill="black" />
-                                                </svg>
-                                            }
-                                        />
-                                    </button>
-                                </DialogTrigger>
-                                <DialogContent className="max-h-[80vh] flex flex-col">
-                                    <DialogHeader>
-                                        <DialogTitle>Your Source of Negativity</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="overflow-y-auto">
-                                        {isLoadingInsight ? <p>Loading insight...</p> : 
-                                        <ul className="list-disc pl-5 space-y-2">
-                                            {negativityInsight.map((item, index) => <li key={index}>{item}</li>)}
-                                        </ul>}
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
+                           <InsightDialog
+                                trigger={
+                                    <TriggerCard
+                                        title="Your source of negativity"
+                                        character={
+                                             <svg width="80" height="80" viewBox="0 0 100 100">
+                                                <path d="M 85.3,63.2 C 94.6,47.4 89.2,27.5 73.4,18.2 C 57.6,8.9 37.7,14.3 28.4,30.1 C 19.1,45.9 24.5,65.8 40.3,75.1 C 56.1,84.4 76,79 85.3,63.2 Z" fill="#A5B4FC"></path>
+                                                <rect x="40" y="55" width="30" height="5" fill="black" />
+                                                <rect x="40" y="45" width="10" height="5" fill="black" />
+                                                <rect x="60" y="45" width="10" height="5" fill="black" />
+                                            </svg>
+                                        }
+                                    />
+                                }
+                                title="Your Source of Negativity"
+                                onOpen={() => fetchInsight('negativity')}
+                                content={
+                                    isLoadingInsight ? <p>Loading insight...</p> :
+                                    <ul className="list-disc pl-5 space-y-2">
+                                        {negativityInsight.map((item, index) => <li key={index}>{item}</li>)}
+                                    </ul>
+                                }
+                            />
 
-                             <Dialog onOpenChange={(open) => open && fetchInsight('triggers')}>
-                                <DialogTrigger asChild>
-                                    <button className="w-full h-full">
-                                        <TriggerCard 
-                                            title="Triggers of bad moods" 
-                                            character={
-                                                 <svg width="80" height="80" viewBox="0 0 100 100">
-                                                    <path d="M 85.3,63.2 C 94.6,47.4 89.2,27.5 73.4,18.2 C 57.6,8.9 37.7,14.3 28.4,30.1 C 19.1,45.9 24.5,65.8 40.3,75.1 C 56.1,84.4 76,79 85.3,63.2 Z" fill="#FDBA74"></path>
-                                                    <path d="M 40 45 Q 45 40 50 45" stroke="black" fill="transparent" strokeWidth="3" />
-                                                    <path d="M 60 45 Q 65 40 70 45" stroke="black" fill="transparent" strokeWidth="3" />
-                                                    <path d="M 45 60 C 50 55, 60 55, 65 60 L 60 70 L 50 70 Z" stroke="black" fill="transparent" strokeWidth="3" />
-                                                </svg>
-                                            }
-                                        />
-                                    </button>
-                                </DialogTrigger>
-                                <DialogContent className="max-h-[80vh] flex flex-col">
-                                    <DialogHeader>
-                                        <DialogTitle>Triggers of Bad Moods</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="overflow-y-auto">
-                                        {isLoadingInsight ? <p>Loading insight...</p> : 
-                                        <ul className="list-disc pl-5 space-y-2">
-                                            {triggersInsight.map((item, index) => <li key={index}>{item}</li>)}
-                                        </ul>}
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
+                             <InsightDialog
+                                trigger={
+                                    <TriggerCard
+                                        title="Triggers of bad moods"
+                                        character={
+                                             <svg width="80" height="80" viewBox="0 0 100 100">
+                                                <path d="M 85.3,63.2 C 94.6,47.4 89.2,27.5 73.4,18.2 C 57.6,8.9 37.7,14.3 28.4,30.1 C 19.1,45.9 24.5,65.8 40.3,75.1 C 56.1,84.4 76,79 85.3,63.2 Z" fill="#FDBA74"></path>
+                                                <path d="M 40 45 Q 45 40 50 45" stroke="black" fill="transparent" strokeWidth="3" />
+                                                <path d="M 60 45 Q 65 40 70 45" stroke="black" fill="transparent" strokeWidth="3" />
+                                                <path d="M 45 60 C 50 55, 60 55, 65 60 L 60 70 L 50 70 Z" stroke="black" fill="transparent" strokeWidth="3" />
+                                            </svg>
+                                        }
+                                    />
+                                }
+                                title="Triggers of Bad Moods"
+                                onOpen={() => fetchInsight('triggers')}
+                                content={
+                                    isLoadingInsight ? <p>Loading insight...</p> :
+                                    <ul className="list-disc pl-5 space-y-2">
+                                        {triggersInsight.map((item, index) => <li key={index}>{item}</li>)}
+                                    </ul>
+                                }
+                            />
                         </div>
                     </section>
 
@@ -515,3 +496,5 @@ export default function InsightsPage() {
         </div>
     );
 }
+
+    

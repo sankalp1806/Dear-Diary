@@ -14,7 +14,7 @@ import {
 } from 'date-fns';
 import { ArrowUpFromLine, ChevronLeft, ChevronRight, Home, LineChart, Search, Sparkles, Settings, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, emotionToMood } from '@/lib/utils';
 import Link from 'next/link';
 import {
   DropdownMenu,
@@ -24,66 +24,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import html2canvas from 'html2canvas';
 import NavFooter from '@/components/shared/footer';
-
-// Helper to map sentiment to mood
-const emotionToMood = (emotion?: string) => {
-  switch (emotion?.toLowerCase()) {
-    case 'happy':
-      return { emoji: '😊', color: '' };
-    case 'excited':
-      return { emoji: '😃', color: '' };
-    case 'grateful':
-      return { emoji: '🙏', color: '' };
-    case 'content':
-        return { emoji: '😌', color: '' };
-    case 'loving':
-      return { emoji: '😍', color: '' };
-    case 'relaxed':
-      return { emoji: '😌', color: '' };
-    case 'calm':
-      return { emoji: '😌', color: '' };
-    case 'romantic':
-        return { emoji: '🥰', color: '' };
-    case 'amused':
-        return { emoji: '😂', color: '' };
-    case 'joyful':
-        return { emoji: '🎉', color: '' };
-    case 'optimistic':
-        return { emoji: '👍', color: '' };
-    case 'proud':
-        return { emoji: '🏆', color: '' };
-    case 'sad':
-      return { emoji: '😢', color: '' };
-    case 'angry':
-      return { emoji: '😠', color: '' };
-    case 'anxious':
-      return { emoji: '😟', color: '' };
-    case 'worried':
-      return { emoji: '😨', color: '' };
-    case 'scared':
-      return { emoji: '😱', color: '' };
-    case 'surprised':
-      return { emoji: '😮', color: '' };
-    case 'bored':
-        return { emoji: '😴', color: '' };
-    case 'exhausted':
-        return { emoji: '😴', color: '' };
-    case 'stressed':
-        return { emoji: '😥', color: '' };
-    case 'tired':
-        return { emoji: '😴', color: '' };
-    case 'confused':
-        return { emoji: '🤔', color: '' };
-    case 'lonely':
-        return { emoji: '😔', color: '' };
-    case 'guilty':
-        return { emoji: '😅', color: '' };
-    case 'disappointed':
-        return { emoji: '😞', color: '' };
-    case 'neutral':
-      return { emoji: '😐', color: '' };
-  }
-};
 
 
 const MoodEmoji = ({ mood }: { mood: string }) => {
@@ -135,10 +75,21 @@ export default function Dashboard() {
     for (const day in dailyEntries) {
         const dayEntries = dailyEntries[day];
         if (dayEntries.length > 0) {
-            // For simplicity, we'll use the emotion from the *first* entry of the day.
-            // A more complex implementation could average moods or show multiple.
-            const primaryEmotion = dayEntries[0].emotion;
-            moods[day] = emotionToMood(primaryEmotion);
+            const avgMoodScore = dayEntries.reduce((sum, entry) => sum + (entry.mood_score || 0), 0) / dayEntries.length;
+            
+            let avgEmotion = 'Neutral';
+            if (avgMoodScore >= 8) avgEmotion = 'Joyful';
+            else if (avgMoodScore >= 6) avgEmotion = 'Happy';
+            else if (avgMoodScore >= 5) avgEmotion = 'Content';
+            else if (avgMoodScore >= 4) avgEmotion = 'Calm';
+            else if (avgMoodScore >= 3) avgEmotion = 'Anxious';
+            else if (avgMoodScore >= 2) avgEmotion = 'Sad';
+            else if (avgMoodScore > 0) avgEmotion = 'Angry';
+
+            const moodLook = emotionToMood(avgEmotion);
+            if(moodLook) {
+                moods[day] = moodLook;
+            }
         }
     }
 
@@ -212,9 +163,9 @@ export default function Dashboard() {
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
 
-  const months = Array.from({ length: 12 }, (_, i) =>
+  const months = useMemo(() => Array.from({ length: 12 }, (_, i) =>
     format(new Date(currentDate.getFullYear(), i), 'MMMM')
-  );
+  ), [currentDate]);
   
   const hasEntryForDate = (date: Date) => {
     if (!isClient) return false;
@@ -314,3 +265,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+    

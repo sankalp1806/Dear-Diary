@@ -12,77 +12,10 @@ import {
 } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
 import { motion } from 'framer-motion';
-
-const emotionToMood = (emotion?: string) => {
-  switch (emotion?.toLowerCase()) {
-    case 'happy':
-      return { emoji: '😊', color: '' };
-    case 'excited':
-      return { emoji: '😃', color: '' };
-    case 'grateful':
-      return { emoji: '🙏', color: '' };
-    case 'content':
-        return { emoji: '😌', color: '' };
-    case 'loving':
-      return { emoji: '😍', color: '' };
-    case 'relaxed':
-      return { emoji: '😌', color: '' };
-    case 'calm':
-      return { emoji: '😌', color: '' };
-    case 'romantic':
-        return { emoji: '🥰', color: '' };
-    case 'amused':
-        return { emoji: '😂', color: '' };
-    case 'joyful':
-        return { emoji: '🎉', color: '' };
-    case 'optimistic':
-        return { emoji: '👍', color: '' };
-    case 'proud':
-        return { emoji: '🏆', color: '' };
-    case 'sad':
-      return { emoji: '😢', color: '' };
-    case 'angry':
-      return { emoji: '😠', color: '' };
-    case 'anxious':
-      return { emoji: '😟', color: '' };
-    case 'worried':
-      return { emoji: '😨', color: '' };
-    case 'scared':
-      return { emoji: '😱', color: '' };
-    case 'surprised':
-      return { emoji: '😮', color: '' };
-    case 'bored':
-        return { emoji: '😴', color: '' };
-    case 'exhausted':
-        return { emoji: '😴', color: '' };
-    case 'stressed':
-        return { emoji: '😥', color: '' };
-    case 'tired':
-        return { emoji: '😴', color: '' };
-    case 'confused':
-        return { emoji: '🤔', color: '' };
-    case 'lonely':
-        return { emoji: '😔', color: '' };
-    case 'guilty':
-        return { emoji: '😅', color: '' };
-    case 'disappointed':
-        return { emoji: '😞', color: '' };
-    case 'neutral':
-      return { emoji: '😐', color: '' };
-    default:
-      return { emoji: '😐', color: '' };
-  }
-};
+import { emotionToMood } from '@/lib/utils';
 
 
-// Mock JournalEntry entity
-const mockJournalEntries = [
-    { id: '1', title: 'Fellt happy xD', content: 'Today was a painful day. I found...', mood_score: 6, sentiment: 'negative', emotion: 'Sad', entry_date: new Date(new Date().setHours(9, 15)).toISOString(), category: 'feelings' },
-    { id: '2', title: 'Just got promotion. OMGG!', content: 'Today was a good day, I found...', mood_score: 7, sentiment: 'very positive', emotion: 'Excited', entry_date: new Date(new Date().setHours(11, 30)).toISOString(), category: 'mood' },
-    { id: '3', title: "don't know wht to do anym...", content: 'Felt a bit anxious about the upcoming presentation.', mood_score: 3, sentiment: 'negative', emotion: 'Anxious', entry_date: new Date(new Date().setHours(13, 0)).toISOString(), category: 'feelings' },
-];
-
-const EntryItem = ({ entry, onDelete, onEdit }: { entry: any, onDelete: (id: string) => void, onEdit: (id: string) => void }) => {
+const EntryItem = React.memo(({ entry, onDelete, onEdit }: { entry: any, onDelete: (id: string) => void, onEdit: (id: string) => void }) => {
   const mood = emotionToMood(entry.emotion);
 
   return (
@@ -93,19 +26,19 @@ const EntryItem = ({ entry, onDelete, onEdit }: { entry: any, onDelete: (id: str
         </span>
         <div className="w-px flex-1 bg-gray-200 my-2"></div>
       </div>
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden" onClick={() => onEdit(entry.id)}>
         <div className="relative">
           <motion.div
             drag="x"
-            dragConstraints={{ left: -128, right: 0 }}
+            dragConstraints={{ left: -80, right: 0 }}
             dragElastic={0.2}
-            className="relative z-10 bg-white rounded-xl shadow-sm w-full transition-shadow duration-300 hover:shadow-md"
+            className="relative z-10 bg-white rounded-xl shadow-sm w-full transition-shadow duration-300 hover:shadow-md cursor-pointer"
             whileHover={{ scale: 1.02 }}
           >
             <div className=" p-4">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-3xl">
-                  {mood.emoji}
+                  {mood?.emoji}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-gray-800">{entry.title}</h3>
@@ -119,10 +52,7 @@ const EntryItem = ({ entry, onDelete, onEdit }: { entry: any, onDelete: (id: str
             className="absolute right-0 top-0 bottom-0 flex items-center pr-4"
           >
             <div className="flex items-center gap-2">
-                <Button size="icon" className="bg-yellow-400 text-white rounded-full w-12 h-12 shadow-lg" onClick={() => onEdit(entry.id)}>
-                    <BookOpen className="w-6 h-6" />
-                </Button>
-                <Button size="icon" className="bg-red-500 text-white rounded-full w-12 h-12 shadow-lg" onClick={() => onDelete(entry.id)}>
+                <Button size="icon" className="bg-red-500 text-white rounded-full w-12 h-12 shadow-lg" onClick={(e) => {e.stopPropagation(); onDelete(entry.id)}}>
                     <Trash2 className="w-6 h-6" />
                 </Button>
             </div>
@@ -131,7 +61,8 @@ const EntryItem = ({ entry, onDelete, onEdit }: { entry: any, onDelete: (id: str
       </div>
     </div>
   );
-};
+});
+EntryItem.displayName = 'EntryItem';
 
 
 export default function TimelinePage() {
@@ -152,10 +83,6 @@ export default function TimelinePage() {
     if (typeof window !== 'undefined') {
       const storedEntriesJson = localStorage.getItem('journalEntries');
       let storedEntries = storedEntriesJson ? JSON.parse(storedEntriesJson) : [];
-      if (storedEntries.length === 0) {
-        storedEntries = mockJournalEntries;
-        localStorage.setItem('journalEntries', JSON.stringify(mockJournalEntries));
-      }
       
       const filtered = storedEntries.filter((entry: any) => 
         format(new Date(entry.entry_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
@@ -168,6 +95,14 @@ export default function TimelinePage() {
 
   useEffect(() => {
     loadEntries();
+     const handleStorageChange = () => {
+      loadEntries();
+    };
+    window.addEventListener('journalEntriesChanged', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('journalEntriesChanged', handleStorageChange);
+    };
   }, [loadEntries]);
 
   const handleDelete = (id: string) => {
@@ -176,15 +111,13 @@ export default function TimelinePage() {
       const storedEntries = storedEntriesJson ? JSON.parse(storedEntriesJson) : [];
       const updatedEntries = storedEntries.filter((entry: any) => entry.id !== id);
       localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
-      loadEntries();
+      window.dispatchEvent(new CustomEvent('journalEntriesChanged'));
     }
   };
 
   const handleEdit = (id: string) => {
      if (typeof window !== 'undefined') {
-      const storedEntriesJson = localStorage.getItem('journalEntries');
-      const storedEntries = storedEntriesJson ? JSON.parse(storedEntriesJson) : [];
-      const entryToEdit = storedEntries.find((entry: any) => entry.id === id);
+      const entryToEdit = entries.find((entry: any) => entry.id === id);
       if (entryToEdit) {
         localStorage.setItem('entryToEdit', JSON.stringify(entryToEdit));
         localStorage.setItem('entryToEditId', id);
@@ -232,7 +165,7 @@ export default function TimelinePage() {
           </div>
         ) : (
           <div className='relative'>
-             <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200"></div>
+             <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200 ml-2"></div>
               <div className="space-y-6">
                 {entries.map((entry) => (
                   <EntryItem key={entry.id} entry={entry} onDelete={handleDelete} onEdit={handleEdit} />
@@ -252,3 +185,5 @@ export default function TimelinePage() {
     </div>
   );
 }
+
+    
