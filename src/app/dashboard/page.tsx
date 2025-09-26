@@ -182,7 +182,7 @@ export default function Dashboard() {
 
   return (
     <div
-      className="h-screen w-full bg-[#F3F7F2] flex flex-col font-sans text-gray-700"
+      className="h-screen w-full bg-background flex flex-col font-sans text-gray-700"
     >
        <div ref={calendarRef} className="flex-1 pb-24">
       <header className="p-4 flex items-center justify-between">

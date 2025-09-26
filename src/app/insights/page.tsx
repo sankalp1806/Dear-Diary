@@ -348,7 +348,7 @@ export default function InsightsPage() {
 
     if (!isClient) {
         return (
-          <div className="min-h-screen bg-[#FBF9F7] font-sans text-gray-800 flex items-center justify-center">
+          <div className="min-h-screen bg-background font-sans text-gray-800 flex items-center justify-center">
             <p>Loading insights...</p>
           </div>
         );
@@ -356,7 +356,7 @@ export default function InsightsPage() {
 
     if (!insights) {
       return (
-        <div className="min-h-screen bg-[#FBF9F7] font-sans text-gray-800">
+        <div className="min-h-screen bg-background font-sans text-gray-800">
              <div className="container mx-auto px-4 py-6 pb-24 flex flex-col h-screen justify-center items-center">
                  <BookOpen className="w-16 h-16 mb-4 text-gray-400" />
                 <h2 className="text-xl font-semibold text-gray-700">No Insights Yet</h2>
@@ -368,7 +368,7 @@ export default function InsightsPage() {
     }
     
     return (
-        <div className="min-h-screen bg-[#FBF9F7] font-sans text-gray-800">
+        <div className="min-h-screen bg-background font-sans text-gray-800">
             <div className="container mx-auto px-4 py-6 pb-24">
                 <header className="grid grid-cols-3 items-center mb-8">
                     <div className="flex items-center gap-3">

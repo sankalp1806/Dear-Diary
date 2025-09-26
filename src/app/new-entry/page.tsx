@@ -267,7 +267,7 @@ export default function NewEntry() {
   };
 
   return (
-    <div className="h-screen w-full bg-[#F8F5F2] flex flex-col font-sans">
+    <div className="h-screen w-full bg-background flex flex-col font-sans">
       <div className="w-full max-w-2xl mx-auto flex flex-col flex-1">
         <div className="absolute top-0 left-0 right-0 h-1 bg-green-200">
           <motion.div
