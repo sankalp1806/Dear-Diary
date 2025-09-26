@@ -135,34 +135,20 @@ export default function NewEntry() {
     };
   }, [isViewMode]);
 
-  const handleSendOrSave = () => {
-    if (isChatMode) {
-      // In chat mode, the button sends a message
-      handleChatSubmit();
-    } else {
-      // In normal mode, it saves the entry
-      handleSave();
-    }
-  };
-
-
-  const handleSave = async () => {
+  const saveEntry = async () => {
     if (isViewMode) {
-        router.back();
         return;
     }
     const isContentEmpty = isChatMode ? conversation.length === 0 : !content;
 
     if (isContentEmpty) {
-      router.push('/dashboard');
       return;
     }
-
+    
     const finalContent = isChatMode ? conversation : content;
     const entryTextForAnalysis = isChatMode
       ? conversation.map(m => `${m.sender === 'ai' ? 'AI' : 'Me'}: ${m.text}`).join('\n')
       : (content as string);
-
 
     const sentimentResult = await getSentimentForEntry(entryTextForAnalysis);
     const primaryEmotion = sentimentResult?.emotion || 'Neutral';
@@ -179,7 +165,6 @@ export default function NewEntry() {
     } else if (overallSentiment.includes('negative')) {
         mood_score = 3;
     }
-
 
     if (typeof window !== 'undefined') {
       const existingEntriesJson = localStorage.getItem('journalEntries');
@@ -220,9 +205,24 @@ export default function NewEntry() {
       // Dispatch a custom event to notify other components of the change
       window.dispatchEvent(new CustomEvent('journalEntriesChanged'));
     }
-    
-    router.push('/dashboard');
+  }
+
+  const handleSendOrSave = async () => {
+    if (isChatMode) {
+      // In chat mode, the button sends a message
+      await handleChatSubmit();
+    } else {
+      // In normal mode, it saves the entry
+      await saveEntry();
+      router.push('/dashboard');
+    }
   };
+
+  const handleBack = async () => {
+    await saveEntry();
+    router.back();
+  }
+
 
   const handleAttachment = () => {
     fileInputRef.current?.click();
@@ -329,7 +329,7 @@ export default function NewEntry() {
         </div>
 
         <header className="flex items-center justify-between p-4 pt-6">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+          <Button variant="ghost" size="icon" onClick={handleBack}>
             <ChevronLeft className="w-6 h-6 text-gray-700" />
           </Button>
           <h1 className="text-lg font-semibold text-gray-800">{isViewMode ? 'Journal Entry' : "What's Up??"}</h1>
