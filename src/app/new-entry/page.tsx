@@ -34,6 +34,7 @@ export default function NewEntry() {
   const [entryDate, setEntryDate] = useState<Date>(new Date());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isClient, setIsClient] = useState(false);
+  const [isViewMode, setIsViewMode] = useState(false);
 
   const [promptsState, generatePromptsFormAction] = useActionState(
     generatePromptsAction,
@@ -50,6 +51,9 @@ export default function NewEntry() {
   useEffect(() => {
     setIsClient(true);
     const dateStr = searchParams.get('date');
+    const view = searchParams.get('view');
+    setIsViewMode(view === 'true');
+
     let initialDate = new Date();
     if (dateStr) {
       const parsedDate = parseISO(dateStr);
@@ -83,11 +87,13 @@ export default function NewEntry() {
         if (entryToEdit.entry_date) {
             setEntryDate(new Date(entryToEdit.entry_date));
         }
-        // Clean up so it doesn't load again
-        localStorage.removeItem('entryToEdit');
+        // Clean up so it doesn't load again on new entries unless it's for editing
+        if (!isViewMode) {
+          localStorage.removeItem('entryToEdit');
+        }
       }
     }
-  }, []);
+  }, [isViewMode]);
 
   useEffect(() => {
     if (promptsState?.success && promptsState.data?.prompts) {
@@ -110,8 +116,23 @@ export default function NewEntry() {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [conversation]);
+    
+    useEffect(() => {
+    // When navigating away, clear the view-only data
+    return () => {
+      if (isViewMode) {
+        localStorage.removeItem('entryToEdit');
+        localStorage.removeItem('entryToEditId');
+      }
+    };
+  }, [isViewMode]);
+
 
   const handleSave = async () => {
+    if (isViewMode) {
+        router.back();
+        return;
+    }
     if (!content && !title) {
       router.push('/dashboard');
       return;
@@ -145,7 +166,7 @@ export default function NewEntry() {
       
       const entryToEditId = localStorage.getItem('entryToEditId');
 
-      if (entryToEditId) {
+      if (entryToEditId && !isViewMode) {
         // Update existing entry
         const updatedEntries = existingEntries.map((entry: any) => 
           entry.id === entryToEditId 
@@ -154,7 +175,8 @@ export default function NewEntry() {
         );
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
         localStorage.removeItem('entryToEditId');
-      } else {
+        localStorage.removeItem('entryToEdit');
+      } else if (!isViewMode) {
         // Add new entry
         const newEntry = {
           id: new Date().toISOString(),
@@ -259,7 +281,7 @@ export default function NewEntry() {
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="w-6 h-6 text-gray-700" />
           </Button>
-          <h1 className="text-lg font-semibold text-gray-800">What's Up??</h1>
+          <h1 className="text-lg font-semibold text-gray-800">{isViewMode ? 'Journal Entry' : "What's Up??"}</h1>
           <div className="w-10"></div>
         </header>
 
@@ -284,14 +306,16 @@ export default function NewEntry() {
                   placeholder="Untitled"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="text-4xl font-bold text-gray-800 bg-transparent outline-none mb-4 placeholder:text-gray-400"
+                  readOnly={isViewMode}
+                  className="text-4xl font-bold text-gray-800 bg-transparent outline-none mb-4 placeholder:text-gray-400 read-only:cursor-default"
                 />
                 <Textarea
                   name="entry"
                   placeholder="Write anything that's on your mind..."
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="flex-1 text-xl text-gray-600 bg-transparent border-none outline-none resize-none p-0 focus-visible:ring-0 placeholder:text-gray-400"
+                  readOnly={isViewMode}
+                  className="flex-1 text-xl text-gray-600 bg-transparent border-none outline-none resize-none p-0 focus-visible:ring-0 placeholder:text-gray-400 read-only:cursor-default"
                 />
               </>
             ) : (
@@ -318,7 +342,7 @@ export default function NewEntry() {
           </div>
         </main>
 
-        <footer className="p-4 mt-auto">
+        <footer className={`p-4 mt-auto ${isViewMode ? 'hidden' : ''}`}>
           {isChatMode ? (
               <div className="bg-white rounded-lg shadow-lg p-2 flex items-center">
                  <Textarea

@@ -9,7 +9,6 @@ import {
   BookOpen,
   ChevronRight,
   Trash2,
-  Pencil,
 } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -121,7 +120,7 @@ const EntryItem = ({ entry, onDelete, onEdit }: { entry: any, onDelete: (id: str
           >
             <div className="flex items-center gap-2">
                 <Button size="icon" className="bg-yellow-400 text-white rounded-full w-12 h-12 shadow-lg" onClick={() => onEdit(entry.id)}>
-                    <Pencil className="w-6 h-6" />
+                    <BookOpen className="w-6 h-6" />
                 </Button>
                 <Button size="icon" className="bg-red-500 text-white rounded-full w-12 h-12 shadow-lg" onClick={() => onDelete(entry.id)}>
                     <Trash2 className="w-6 h-6" />
@@ -189,7 +188,7 @@ export default function TimelinePage() {
       if (entryToEdit) {
         localStorage.setItem('entryToEdit', JSON.stringify(entryToEdit));
         localStorage.setItem('entryToEditId', id);
-        router.push('/new-entry');
+        router.push('/new-entry?view=true');
       }
     }
   };
