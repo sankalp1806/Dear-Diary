@@ -9,6 +9,7 @@ import {
   BookOpen,
   ChevronRight,
   Trash2,
+  MessageSquare,
 } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -17,6 +18,17 @@ import { emotionToMood } from '@/lib/utils';
 
 const EntryItem = React.memo(({ entry, onDelete, onEdit }: { entry: any, onDelete: (id: string) => void, onEdit: (id: string) => void }) => {
   const mood = emotionToMood(entry.emotion);
+  const isChat = entry.isChat;
+
+  const getEntryPreview = () => {
+    if (isChat) {
+      return "Chat with AI";
+    }
+    if (typeof entry.content === 'string') {
+      return entry.content;
+    }
+    return '';
+  }
 
   return (
     <div className="flex gap-4 items-start relative">
@@ -32,20 +44,28 @@ const EntryItem = React.memo(({ entry, onDelete, onEdit }: { entry: any, onDelet
             drag="x"
             dragConstraints={{ left: -80, right: 0 }}
             dragElastic={0.2}
-            className="relative z-10 bg-white rounded-xl shadow-sm w-full transition-shadow duration-300 hover:shadow-md cursor-pointer"
+            className="relative z-10 bg-white rounded-xl shadow-sm w-full transition-shadow duration-300 hover:shadow-md"
             whileHover={{ scale: 1.02 }}
             onTap={() => onEdit(entry.id)}
           >
-            <div className=" p-4">
+            <div className=" p-4 cursor-pointer">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-3xl">
                   {mood?.emoji}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-gray-800">{entry.title}</h3>
-                  <p className="text-sm text-gray-500 break-words">{entry.content}</p>
+                  <p className="text-sm text-gray-500 break-words">
+                     {isChat ? (
+                        <span className="flex items-center gap-2 italic text-gray-500">
+                          <MessageSquare className="w-4 h-4" />
+                          {getEntryPreview()}
+                        </span>
+                      ) : (
+                        getEntryPreview()
+                      )}
+                  </p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-300 self-center" />
+                <BookOpen className="w-5 h-5 text-gray-300 self-center" />
               </div>
             </div>
           </motion.div>
@@ -186,5 +206,3 @@ export default function TimelinePage() {
     </div>
   );
 }
-
-    

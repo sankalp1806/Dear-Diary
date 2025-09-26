@@ -29,7 +29,7 @@ export default function NewEntry() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState<string | ChatMessage[]>('');
   const [entryDate, setEntryDate] = useState<Date>(new Date());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isClient, setIsClient] = useState(false);
@@ -74,7 +74,7 @@ export default function NewEntry() {
       const voiceTranscript = localStorage.getItem('voice-transcript');
       if (voiceTranscript) {
         setContent((prev) =>
-          prev ? `${prev}\n${voiceTranscript}` : voiceTranscript
+          typeof prev === 'string' ? (prev ? `${prev}\n${voiceTranscript}` : voiceTranscript) : prev
         );
         localStorage.removeItem('voice-transcript');
       }
@@ -83,6 +83,13 @@ export default function NewEntry() {
       if (entryToEditJson) {
         const entryToEdit = JSON.parse(entryToEditJson);
         setContent(entryToEdit.content);
+
+        // if content is a chat, set chat mode
+        if (Array.isArray(entryToEdit.content)) {
+          setIsChatMode(true);
+          setConversation(entryToEdit.content);
+        }
+
         if (entryToEdit.entry_date && isValid(new Date(entryToEdit.entry_date))) {
             setEntryDate(new Date(entryToEdit.entry_date));
         }
@@ -100,7 +107,7 @@ export default function NewEntry() {
         promptsState.data.prompts[
           Math.floor(Math.random() * promptsState.data.prompts.length)
         ];
-      setContent((prev) => `${prev}${prev ? '\n\n' : ''}${randomPrompt}\n`);
+      setContent((prev) => typeof prev === 'string' ? `${prev}${prev ? '\n\n' : ''}${randomPrompt}\n` : prev);
     } else if (promptsState?.error) {
       toast({
         variant: 'destructive',
@@ -132,15 +139,20 @@ export default function NewEntry() {
         router.back();
         return;
     }
-    if (!content) {
+    const isContentEmpty = isChatMode ? conversation.length === 0 : !content;
+
+    if (isContentEmpty) {
       router.push('/dashboard');
       return;
     }
 
-    const finalContent = isChatMode ? conversation.map(m => `${m.sender === 'ai' ? 'AI' : 'Me'}: ${m.text}`).join('\n') : content;
+    const finalContent = isChatMode ? conversation : content;
+    const entryTextForAnalysis = isChatMode
+      ? conversation.map(m => `${m.sender === 'ai' ? 'AI' : 'Me'}: ${m.text}`).join('\n')
+      : (content as string);
 
 
-    const sentimentResult = await getSentimentForEntry(finalContent);
+    const sentimentResult = await getSentimentForEntry(entryTextForAnalysis);
     const primaryEmotion = sentimentResult?.emotion || 'Neutral';
     const overallSentiment = sentimentResult?.overallSentiment?.toLowerCase() || 'neutral';
 
@@ -169,7 +181,7 @@ export default function NewEntry() {
         // Update existing entry
         const updatedEntries = existingEntries.map((entry: any) => 
           entry.id === entryToEditId 
-            ? { ...entry, title: 'Untitled', content: finalContent, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score, emotion: primaryEmotion }
+            ? { ...entry, content: finalContent, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score, emotion: primaryEmotion, isChat: isChatMode }
             : entry
         );
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
@@ -179,13 +191,13 @@ export default function NewEntry() {
         // Add new entry
         const newEntry = {
           id: new Date().toISOString(),
-          title: 'Untitled',
           content: finalContent,
           entry_date: entryDate.toISOString(),
           mood_score: mood_score,
           sentiment: overallSentiment,
           emotion: primaryEmotion,
-          category: 'feelings'
+          category: 'feelings',
+          isChat: isChatMode,
         };
         const updatedEntries = [...existingEntries, newEntry];
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
@@ -211,13 +223,18 @@ export default function NewEntry() {
   };
 
   const handleAiChatToggle = async () => {
+    if (isViewMode) return;
     if (!isChatMode) {
       setIsChatMode(true);
+      // if content is string, put it as first user message
+      if(typeof content === 'string' && content.trim().length > 0) {
+        setConversation([{ sender: 'user', text: content }]);
+      }
       setIsAiTyping(true);
       // Start conversation
       const result = await continueConversationAction([]);
       if (result.success && result.data) {
-        setConversation([{ sender: 'ai', text: result.data.response }]);
+        setConversation(prev => [...prev, { sender: 'ai', text: result.data.response }]);
       } else {
         toast({
           variant: 'destructive',
@@ -239,7 +256,7 @@ export default function NewEntry() {
   const handleChatSubmit = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (!chatInput.trim() || isAiTyping) return;
+      if (!chatInput.trim() || isAiTyping || isViewMode) return;
 
       const newUserMessage: ChatMessage = { sender: 'user', text: chatInput };
       const newConversation = [...conversation, newUserMessage];
@@ -265,7 +282,7 @@ export default function NewEntry() {
   };
 
   return (
-    <div className="h-screen w-full bg-background flex flex-col font-sans">
+    <div className="h-screen w-full bg-[#E0D3AF] flex flex-col font-sans">
       <div className="w-full max-w-2xl mx-auto flex flex-col flex-1">
         <div className="absolute top-0 left-0 right-0 h-1 bg-green-200">
           <motion.div
@@ -303,7 +320,7 @@ export default function NewEntry() {
                 <Textarea
                   name="entry"
                   placeholder="Write anything that's on your mind..."
-                  value={content}
+                  value={typeof content === 'string' ? content : ''}
                   onChange={(e) => setContent(e.target.value)}
                   readOnly={isViewMode}
                   className="flex-1 text-2xl text-black bg-transparent border-none outline-none resize-none p-0 focus-visible:ring-0 placeholder:text-gray-400 read-only:cursor-default"
@@ -314,7 +331,7 @@ export default function NewEntry() {
                 {conversation.map((msg, index) => (
                   <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
                     {msg.sender === 'ai' && <Bot className="w-6 h-6 text-gray-500 shrink-0" />}
-                    <div className={`p-3 rounded-lg max-w-md ${msg.sender === 'ai' ? 'bg-secondary' : 'bg-primary/20'}`}>
+                    <div className={`p-3 rounded-lg max-w-md bg-card`}>
                       <p className="text-black whitespace-pre-wrap">{msg.text}</p>
                     </div>
                     {msg.sender === 'user' && <User className="w-6 h-6 text-gray-500 shrink-0" />}
@@ -323,7 +340,7 @@ export default function NewEntry() {
                  {isAiTyping && (
                   <div className="flex items-start gap-3">
                     <Bot className="w-6 h-6 text-gray-500 shrink-0" />
-                    <div className="p-3 rounded-lg bg-secondary">
+                    <div className="p-3 rounded-lg bg-card">
                       <p className="text-gray-500 italic">typing...</p>
                     </div>
                   </div>
@@ -333,9 +350,9 @@ export default function NewEntry() {
           </div>
         </main>
 
-        <footer className={`p-4 mt-auto ${isViewMode ? 'hidden' : ''}`}>
-          {isChatMode ? (
-              <div className="bg-secondary rounded-lg shadow-lg p-2 flex items-center">
+        <footer className={`p-4 mt-auto ${isViewMode && !isChatMode ? 'hidden' : ''}`}>
+           {isChatMode ? (
+             <div className={`bg-card rounded-lg shadow-lg p-2 flex items-center ${isViewMode ? 'hidden' : ''}`}>
                  <Textarea
                     placeholder="Message your AI friend..."
                     value={chatInput}
@@ -343,17 +360,18 @@ export default function NewEntry() {
                     onKeyDown={handleChatSubmit}
                     className="flex-1 bg-transparent border-none outline-none resize-none p-2 focus-visible:ring-0 placeholder:text-gray-400 text-black"
                     rows={1}
+                    readOnly={isViewMode}
                 />
               </div>
           ) : (
-            <form onSubmit={(e) => { e.preventDefault(); (e.target as HTMLFormElement).requestSubmit(); }} action={generatePromptsFormAction}>
-                 <p className="text-center text-gray-400 text-sm mb-3">
+             <form onSubmit={(e) => { e.preventDefault(); (e.target as HTMLFormElement).requestSubmit(); }} action={generatePromptsFormAction}>
+                 <p className={`text-center text-gray-400 text-sm mb-3 ${isViewMode ? 'hidden' : ''}`}>
                     Tap to continue your journal!
                 </p>
             </form>
           )}
 
-          <div className="bg-secondary rounded-full shadow-lg p-2 flex items-center justify-around mt-3">
+          <div className={`bg-secondary rounded-full shadow-lg p-2 flex items-center justify-around mt-3 ${isViewMode ? 'hidden' : ''}`}>
             <Link href="/voice-chat">
               <Button variant="ghost" size="icon" className="text-gray-600">
                 <Mic className="w-6 h-6" />
