@@ -75,18 +75,25 @@ export default function Dashboard() {
     for (const day in dailyEntries) {
         const dayEntries = dailyEntries[day];
         if (dayEntries.length > 0) {
-            const avgMoodScore = dayEntries.reduce((sum, entry) => sum + (entry.mood_score || 0), 0) / dayEntries.length;
-            
-            let avgEmotion = 'Neutral';
-            if (avgMoodScore >= 8) avgEmotion = 'Joyful';
-            else if (avgMoodScore >= 6) avgEmotion = 'Happy';
-            else if (avgMoodScore >= 5) avgEmotion = 'Content';
-            else if (avgMoodScore >= 4) avgEmotion = 'Calm';
-            else if (avgMoodScore >= 3) avgEmotion = 'Anxious';
-            else if (avgMoodScore >= 2) avgEmotion = 'Sad';
-            else if (avgMoodScore > 0) avgEmotion = 'Angry';
+            let moodLook;
+            if (dayEntries.length === 1) {
+                // If there's only one entry, use its direct emotion
+                moodLook = emotionToMood(dayEntries[0].emotion);
+            } else {
+                // If there are multiple entries, calculate the average mood
+                const avgMoodScore = dayEntries.reduce((sum, entry) => sum + (entry.mood_score || 0), 0) / dayEntries.length;
+                
+                let avgEmotion = 'Neutral';
+                if (avgMoodScore >= 8) avgEmotion = 'Joyful';
+                else if (avgMoodScore >= 6) avgEmotion = 'Happy';
+                else if (avgMoodScore >= 5) avgEmotion = 'Content';
+                else if (avgMoodScore >= 4) avgEmotion = 'Calm';
+                else if (avgMoodScore >= 3) avgEmotion = 'Anxious';
+                else if (avgMoodScore >= 2) avgEmotion = 'Sad';
+                else if (avgMoodScore > 0) avgEmotion = 'Angry';
 
-            const moodLook = emotionToMood(avgEmotion);
+                moodLook = emotionToMood(avgEmotion);
+            }
             if(moodLook) {
                 moods[day] = moodLook;
             }
@@ -265,5 +272,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-    
