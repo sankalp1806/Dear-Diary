@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useActionState, useRef } from 'react';
+import React, { useState, useEffect, useActionState, useRef, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ import {
 import { format, parseISO, isValid } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
-import { generatePromptsAction, getSentimentForEntry, continueConversationAction } from '@/app/actions';
+import { generatePromptsAction, getSentimentForEntry, continueConversationAction, getConversationSummaryAction } from '@/app/actions';
 
 interface ChatMessage {
   sender: 'user' | 'ai';
@@ -34,6 +34,7 @@ export default function NewEntry() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isClient, setIsClient] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const [promptsState, generatePromptsFormAction] = useActionState(
     generatePromptsAction,
@@ -82,12 +83,13 @@ export default function NewEntry() {
       const entryToEditJson = localStorage.getItem('entryToEdit');
       if (entryToEditJson) {
         const entryToEdit = JSON.parse(entryToEditJson);
-        setContent(entryToEdit.content);
-
-        // if content is a chat, set chat mode
-        if (Array.isArray(entryToEdit.content)) {
+        
+        if (entryToEdit.isChat && Array.isArray(entryToEdit.content)) {
           setIsChatMode(true);
           setConversation(entryToEdit.content);
+          setContent(entryToEdit.content);
+        } else {
+           setContent(entryToEdit.content);
         }
 
         if (entryToEdit.entry_date && isValid(new Date(entryToEdit.entry_date))) {
@@ -132,6 +134,16 @@ export default function NewEntry() {
       }
     };
   }, [isViewMode]);
+
+  const handleSendOrSave = () => {
+    if (isChatMode) {
+      // In chat mode, the button sends a message
+      handleChatSubmit();
+    } else {
+      // In normal mode, it saves the entry
+      handleSave();
+    }
+  };
 
 
   const handleSave = async () => {
@@ -178,16 +190,18 @@ export default function NewEntry() {
       const entryToEditId = localStorage.getItem('entryToEditId');
 
       if (entryToEditId && !isViewMode) {
+        const summary = isChatMode ? await getConversationSummaryAction(conversation) : undefined;
         // Update existing entry
         const updatedEntries = existingEntries.map((entry: any) => 
           entry.id === entryToEditId 
-            ? { ...entry, content: finalContent, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score, emotion: primaryEmotion, isChat: isChatMode }
+            ? { ...entry, content: finalContent, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score, emotion: primaryEmotion, isChat: isChatMode, summary }
             : entry
         );
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
         localStorage.removeItem('entryToEditId');
         localStorage.removeItem('entryToEdit');
       } else if (!isViewMode) {
+         const summary = isChatMode ? await getConversationSummaryAction(conversation) : undefined;
         // Add new entry
         const newEntry = {
           id: new Date().toISOString(),
@@ -198,6 +212,7 @@ export default function NewEntry() {
           emotion: primaryEmotion,
           category: 'feelings',
           isChat: isChatMode,
+          summary,
         };
         const updatedEntries = [...existingEntries, newEntry];
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
@@ -206,7 +221,7 @@ export default function NewEntry() {
       window.dispatchEvent(new CustomEvent('journalEntriesChanged'));
     }
     
-    router.push(`/timeline?date=${format(entryDate, 'yyyy-MM-dd')}`);
+    router.push('/dashboard');
   };
 
   const handleAttachment = () => {
@@ -228,7 +243,22 @@ export default function NewEntry() {
       setIsChatMode(true);
       // if content is string, put it as first user message
       if(typeof content === 'string' && content.trim().length > 0) {
-        setConversation([{ sender: 'user', text: content }]);
+        const initialUserMessage = { sender: 'user', text: content as string };
+        setConversation([initialUserMessage]);
+        setIsAiTyping(true);
+        const result = await continueConversationAction([initialUserMessage]);
+         if (result.success && result.data) {
+          setConversation(prev => [...prev, { sender: 'ai', text: result.data.response }]);
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'AI Error',
+            description: result.error || 'Could not start conversation.',
+          });
+          setIsChatMode(false); // Revert if AI fails
+        }
+        setIsAiTyping(false);
+        return;
       }
       setIsAiTyping(true);
       // Start conversation
@@ -249,36 +279,41 @@ export default function NewEntry() {
       // If there's a conversation, put it into the content
       if (conversation.length > 0) {
         setContent(conversation.map(m => `${m.sender === 'ai' ? 'AI' : 'Me'}: ${m.text}`).join('\n'));
+      } else {
+        setContent('');
       }
     }
   };
 
-  const handleChatSubmit = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleChatSubmit = async (e?: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e && e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (!chatInput.trim() || isAiTyping || isViewMode) return;
-
-      const newUserMessage: ChatMessage = { sender: 'user', text: chatInput };
-      const newConversation = [...conversation, newUserMessage];
-      setConversation(newConversation);
-      setChatInput('');
-      setIsAiTyping(true);
-
-      const result = await continueConversationAction(newConversation);
-
-      if (result.success && result.data) {
-        setConversation(prev => [...prev, { sender: 'ai', text: result.data!.response }]);
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'AI Error',
-          description: result.error || 'Failed to get AI response.',
-        });
-        // Optionally remove the user message if AI fails
-        setConversation(newConversation); 
-      }
-      setIsAiTyping(false);
+    } else if (e) {
+      return; // Ignore other key presses unless it's a direct call
     }
+    
+    if (!chatInput.trim() || isAiTyping || isViewMode) return;
+
+    const newUserMessage: ChatMessage = { sender: 'user', text: chatInput };
+    const newConversation = [...conversation, newUserMessage];
+    setConversation(newConversation);
+    setChatInput('');
+    setIsAiTyping(true);
+
+    const result = await continueConversationAction(newConversation);
+
+    if (result.success && result.data) {
+      setConversation(prev => [...prev, { sender: 'ai', text: result.data!.response }]);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'AI Error',
+        description: result.error || 'Failed to get AI response.',
+      });
+      // Optionally remove the user message if AI fails
+      setConversation(newConversation); 
+    }
+    setIsAiTyping(false);
   };
 
   return (
@@ -302,7 +337,7 @@ export default function NewEntry() {
         </header>
 
         <main className="flex-1 px-6 py-4 flex flex-col overflow-hidden">
-        <div className="flex items-center gap-2 mb-6 flex-wrap">
+         <Link href="/dashboard">
             <Button
               variant="outline"
               className="rounded-full bg-white border-gray-200"
@@ -312,9 +347,9 @@ export default function NewEntry() {
                 ? format(entryDate, 'MMM d, h:mm a')
                 : 'Loading...'}
             </Button>
-          </div>
+          </Link>
 
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col mt-6">
             {!isChatMode ? (
               <>
                 <Textarea
@@ -364,7 +399,7 @@ export default function NewEntry() {
                 />
               </div>
           ) : (
-             <form onSubmit={(e) => { e.preventDefault(); (e.target as HTMLFormElement).requestSubmit(); }} action={generatePromptsFormAction}>
+             <form action={(formData) => startTransition(() => generatePromptsFormAction(formData))}>
                  <p className={`text-center text-gray-400 text-sm mb-3 ${isViewMode ? 'hidden' : ''}`}>
                     Tap to continue your journal!
                 </p>
@@ -399,7 +434,7 @@ export default function NewEntry() {
             <Button
               size="icon"
               className="bg-green-100 text-green-700 rounded-full w-10 h-10 hover:bg-green-200"
-              onClick={handleSave}
+              onClick={handleSendOrSave}
             >
               <ArrowRight className="w-6 h-6" />
             </Button>

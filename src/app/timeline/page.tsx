@@ -22,7 +22,7 @@ const EntryItem = React.memo(({ entry, onDelete, onEdit }: { entry: any, onDelet
 
   const getEntryPreview = () => {
     if (isChat) {
-      return "Chat with AI";
+      return entry.summary || "Chat with AI";
     }
     if (typeof entry.content === 'string') {
       return entry.content;

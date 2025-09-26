@@ -8,6 +8,7 @@ import { getBalanceOfLifeInsight } from '@/ai/flows/get-balance-of-life-insight'
 import { getNegativeSourceInsight } from '@/ai/flows/get-negative-source-insight';
 import { getBadMoodTriggersInsight } from '@/ai/flows/get-bad-mood-triggers-insight';
 import { continueConversation } from '@/ai/flows/continue-conversation';
+import { summarizeConversation } from '@/ai/flows/summarize-conversation';
 import type { AnalysisState, PromptsState } from '@/lib/types';
 
 const journalEntrySchema = z.object({
@@ -145,4 +146,21 @@ export async function continueConversationAction(
     console.error("Error in continueConversationAction:", error);
     return { success: false, error: "Failed to get AI response." };
   }
+}
+
+
+export async function getConversationSummaryAction(
+  conversation: ChatMessage[]
+): Promise<string> {
+    if (conversation.length === 0) {
+        return "Chat with AI";
+    }
+    try {
+        const result = await summarizeConversation({ conversation });
+        return result.summary;
+    } catch (error) {
+        console.error('Error summarizing conversation:', error);
+        // Fallback to a generic preview
+        return "A conversation with Sparky.";
+    }
 }
