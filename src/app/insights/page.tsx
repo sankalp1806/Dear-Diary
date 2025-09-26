@@ -51,14 +51,12 @@ interface InsightsData {
 }
 
 const moodToEmotionMap: { [key:number]: string } = {
-  1: 'Angry',
+  1: 'Apathetic',
   2: 'Sad',
-  3: 'Anxious',
-  4: 'Neutral',
-  5: 'Calm',
-  6: 'Happy',
-  7: 'Excited',
-  8: 'Grateful',
+  3: 'Angry',
+  4: 'Calm',
+  5: 'Happy',
+  6: 'Joyful',
 };
 
 const emotionDetails: { [key: string]: { icon: React.ReactNode, color: string } } = {
@@ -70,6 +68,8 @@ const emotionDetails: { [key: string]: { icon: React.ReactNode, color: string } 
     'Anxious': { icon: <Frown className="w-5 h-5 text-gray-500" />, color: 'bg-purple-500' },
     'Sad': { icon: <Frown className="w-5 h-5 text-gray-500" />, color: 'bg-indigo-500' },
     'Angry': { icon: <Angry className="w-5 h-5 text-gray-500" />, color: 'bg-red-500' },
+    'Joyful': { icon: <SmilePlus className="w-5 h-5 text-gray-500" />, color: 'bg-yellow-400' },
+    'Apathetic': { icon: <Meh className="w-5 h-5 text-gray-500" />, color: 'bg-gray-400' },
 };
 
 const processJournalData = (entries: JournalEntry[]): InsightsData | null => {
@@ -113,8 +113,36 @@ const processJournalData = (entries: JournalEntry[]): InsightsData | null => {
     const entriesForDay = entries.filter(e => format(new Date(e.entry_date), 'yyyy-MM-dd') === dayStr);
     
     if (entriesForDay.length > 0) {
-      const avgMood = entriesForDay.reduce((sum, e) => sum + e.mood_score, 0) / entriesForDay.length;
-      return { date: format(date, 'EEE'), mood: parseFloat(avgMood.toFixed(2)) };
+      const avgMoodScore = entriesForDay.reduce((sum, e) => {
+          let score = 0;
+          switch (e.emotion?.toLowerCase()) {
+              case 'joyful': score = 6; break;
+              case 'happy':
+              case 'excited':
+              case 'grateful':
+                  score = 5; break;
+              case 'calm':
+              case 'content':
+              case 'relaxed':
+                  score = 4; break;
+              case 'angry':
+                  score = 3; break;
+              case 'sad':
+              case 'anxious':
+              case 'worried':
+              case 'disappointed':
+              case 'lonely':
+                  score = 2; break;
+              case 'apathetic':
+              case 'bored':
+              case 'tired':
+              case 'neutral':
+                  score = 1; break;
+              default: score = 1; // Apathetic for unknown
+          }
+          return sum + score;
+      }, 0) / entriesForDay.length;
+      return { date: format(date, 'EEE'), mood: parseFloat(avgMoodScore.toFixed(2)) };
     }
     return { date: format(date, 'EEE'), mood: 0 };
   });
@@ -135,7 +163,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       const moodValue = payload[0].value;
       let moodLabel = 'No entries';
       if (moodValue > 0) {
-        moodLabel = moodToEmotionMap[Math.round(moodValue)] || 'Neutral';
+        moodLabel = moodToEmotionMap[Math.round(moodValue)] || 'Apathetic';
       }
       return (
         <div className="bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-lg border border-gray-200">
@@ -331,7 +359,7 @@ export default function InsightsPage() {
                             <ResponsiveContainer>
                                 <LineChart data={insights.weeklyMoodData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
                                     <XAxis dataKey="date" tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} />
-                                    <YAxis hide={true} domain={[1, 8]}/>
+                                    <YAxis hide={true} domain={[0, 6]}/>
                                     <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(139, 92, 246, 0.3)', strokeWidth: 2, strokeDasharray: '3 3' }} />
                                     <Line type="monotone" dataKey="mood" stroke="#8B5CF6" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#8B5CF6' }}/>
                                 </LineChart>
