@@ -150,7 +150,7 @@ export default function VoiceChatPage() {
   };
 
   return (
-    <div className="h-screen w-full bg-[#FBF9F7] flex flex-col font-sans text-[#4A4A4A]">
+    <div className="h-screen w-full bg-background flex flex-col font-sans text-foreground">
       <div className="w-full max-w-2xl mx-auto flex flex-col flex-1">
         <header className="flex items-center justify-between p-4 pt-6">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -163,7 +163,7 @@ export default function VoiceChatPage() {
         <main className="flex-1 px-6 py-4 flex flex-col justify-center">
           <div className="text-3xl text-gray-500 h-48 overflow-y-auto">
             {transcript ? (
-                <p>{transcript}</p>
+                <p className="text-black">{transcript}</p>
             ): (
                 <p className="text-gray-400">
                 {isRecording ? "Listening..." : "Press record to start"}

@@ -29,7 +29,6 @@ export default function NewEntry() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [entryDate, setEntryDate] = useState<Date>(new Date());
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -83,7 +82,6 @@ export default function NewEntry() {
       const entryToEditJson = localStorage.getItem('entryToEdit');
       if (entryToEditJson) {
         const entryToEdit = JSON.parse(entryToEditJson);
-        setTitle(entryToEdit.title);
         setContent(entryToEdit.content);
         if (entryToEdit.entry_date && isValid(new Date(entryToEdit.entry_date))) {
             setEntryDate(new Date(entryToEdit.entry_date));
@@ -134,7 +132,7 @@ export default function NewEntry() {
         router.back();
         return;
     }
-    if (!content && !title) {
+    if (!content) {
       router.push('/dashboard');
       return;
     }
@@ -171,7 +169,7 @@ export default function NewEntry() {
         // Update existing entry
         const updatedEntries = existingEntries.map((entry: any) => 
           entry.id === entryToEditId 
-            ? { ...entry, title: title || 'Untitled', content: finalContent, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score, emotion: primaryEmotion }
+            ? { ...entry, title: 'Untitled', content: finalContent, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score, emotion: primaryEmotion }
             : entry
         );
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
@@ -181,7 +179,7 @@ export default function NewEntry() {
         // Add new entry
         const newEntry = {
           id: new Date().toISOString(),
-          title: title || 'Untitled',
+          title: 'Untitled',
           content: finalContent,
           entry_date: entryDate.toISOString(),
           mood_score: mood_score,
@@ -302,21 +300,13 @@ export default function NewEntry() {
           <div className="flex-1 flex flex-col">
             {!isChatMode ? (
               <>
-                <input
-                  type="text"
-                  placeholder="Untitled"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  readOnly={isViewMode}
-                  className="text-4xl font-bold text-gray-800 bg-transparent outline-none mb-4 placeholder:text-gray-400 read-only:cursor-default"
-                />
                 <Textarea
                   name="entry"
                   placeholder="Write anything that's on your mind..."
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   readOnly={isViewMode}
-                  className="flex-1 text-xl text-gray-600 bg-transparent border-none outline-none resize-none p-0 focus-visible:ring-0 placeholder:text-gray-400 read-only:cursor-default"
+                  className="flex-1 text-2xl text-black bg-transparent border-none outline-none resize-none p-0 focus-visible:ring-0 placeholder:text-gray-400 read-only:cursor-default"
                 />
               </>
             ) : (
@@ -324,8 +314,8 @@ export default function NewEntry() {
                 {conversation.map((msg, index) => (
                   <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
                     {msg.sender === 'ai' && <Bot className="w-6 h-6 text-gray-500 shrink-0" />}
-                    <div className={`p-3 rounded-lg max-w-md ${msg.sender === 'ai' ? 'bg-white' : 'bg-green-100'}`}>
-                      <p className="text-gray-800 whitespace-pre-wrap">{msg.text}</p>
+                    <div className={`p-3 rounded-lg max-w-md ${msg.sender === 'ai' ? 'bg-secondary' : 'bg-primary/20'}`}>
+                      <p className="text-black whitespace-pre-wrap">{msg.text}</p>
                     </div>
                     {msg.sender === 'user' && <User className="w-6 h-6 text-gray-500 shrink-0" />}
                   </div>
@@ -333,7 +323,7 @@ export default function NewEntry() {
                  {isAiTyping && (
                   <div className="flex items-start gap-3">
                     <Bot className="w-6 h-6 text-gray-500 shrink-0" />
-                    <div className="p-3 rounded-lg bg-white">
+                    <div className="p-3 rounded-lg bg-secondary">
                       <p className="text-gray-500 italic">typing...</p>
                     </div>
                   </div>
@@ -345,26 +335,25 @@ export default function NewEntry() {
 
         <footer className={`p-4 mt-auto ${isViewMode ? 'hidden' : ''}`}>
           {isChatMode ? (
-              <div className="bg-white rounded-lg shadow-lg p-2 flex items-center">
+              <div className="bg-secondary rounded-lg shadow-lg p-2 flex items-center">
                  <Textarea
                     placeholder="Message your AI friend..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={handleChatSubmit}
-                    className="flex-1 bg-transparent border-none outline-none resize-none p-2 focus-visible:ring-0 placeholder:text-gray-400"
+                    className="flex-1 bg-transparent border-none outline-none resize-none p-2 focus-visible:ring-0 placeholder:text-gray-400 text-black"
                     rows={1}
                 />
               </div>
           ) : (
-            <form action={generatePromptsFormAction}>
-                <input type="hidden" name="entry" value={content} />
+            <form onSubmit={(e) => { e.preventDefault(); (e.target as HTMLFormElement).requestSubmit(); }} action={generatePromptsFormAction}>
                  <p className="text-center text-gray-400 text-sm mb-3">
                     Tap to continue your journal!
                 </p>
             </form>
           )}
 
-          <div className="bg-white rounded-full shadow-lg p-2 flex items-center justify-around mt-3">
+          <div className="bg-secondary rounded-full shadow-lg p-2 flex items-center justify-around mt-3">
             <Link href="/voice-chat">
               <Button variant="ghost" size="icon" className="text-gray-600">
                 <Mic className="w-6 h-6" />
