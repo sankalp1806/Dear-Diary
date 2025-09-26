@@ -37,6 +37,11 @@ const emotionToMood = (emotion?: string) => {
     case 'content':
         return { emoji: '😌', color: '' };
     case 'loving':
+      return { emoji: '😍', color: '' };
+    case 'relaxed':
+      return { emoji: '😌', color: '' };
+    case 'calm':
+      return { emoji: '😌', color: '' };
     case 'romantic':
         return { emoji: '🥰', color: '' };
     case 'amused':
@@ -54,6 +59,15 @@ const emotionToMood = (emotion?: string) => {
     case 'anxious':
       return { emoji: '😟', color: '' };
     case 'worried':
+      return { emoji: '😨', color: '' };
+    case 'scared':
+      return { emoji: '😱', color: '' };
+    case 'surprised':
+      return { emoji: '😮', color: '' };
+    case 'bored':
+        return { emoji: '😴', color: '' };
+    case 'exhausted':
+        return { emoji: '😴', color: '' };
     case 'stressed':
         return { emoji: '😥', color: '' };
     case 'tired':
@@ -67,7 +81,6 @@ const emotionToMood = (emotion?: string) => {
     case 'disappointed':
         return { emoji: '😞', color: '' };
     case 'neutral':
-    default:
       return { emoji: '😐', color: '' };
   }
 };
