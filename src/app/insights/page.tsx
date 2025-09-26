@@ -11,7 +11,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { subDays, format, eachDayOfInterval } from 'date-fns';
+import { subDays, format, eachDayOfInterval, isSameMonth } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -289,6 +289,41 @@ export default function InsightsPage() {
 
     const insights = useMemo(() => processJournalData(journalEntries), [journalEntries]);
 
+    const monthlyInsightMessage = useMemo(() => {
+      if (!journalEntries || journalEntries.length === 0) {
+          return "Start journaling to see your monthly insights!";
+      }
+
+      const currentDate = new Date();
+      const currentMonthEntries = journalEntries.filter(entry => 
+          isSameMonth(new Date(entry.entry_date), currentDate)
+      );
+
+      if (currentMonthEntries.length === 0) {
+          return "No entries this month. Write something to get started!";
+      }
+
+      let positiveCount = 0;
+      let negativeCount = 0;
+
+      currentMonthEntries.forEach(entry => {
+          const sentiment = entry.sentiment?.toLowerCase() || '';
+          if (sentiment.includes('positive')) {
+              positiveCount++;
+          } else if (sentiment.includes('negative')) {
+              negativeCount++;
+          }
+      });
+
+      if (positiveCount > negativeCount) {
+          return "You've been reflecting on positive experiences often this month. Keep it up!";
+      } else if (negativeCount > positiveCount) {
+          return "It seems there have been some challenges this month. Remember to be kind to yourself.";
+      } else {
+          return "Your reflections this month have been balanced. Keep exploring your thoughts and feelings.";
+      }
+    }, [journalEntries]);
+
     const fetchInsight = async (type: 'balance' | 'negativity' | 'triggers') => {
         setIsLoadingInsight(true);
         const entriesJson = JSON.stringify(journalEntries);
@@ -411,7 +446,7 @@ export default function InsightsPage() {
                             })}
                         </div>
                         <p className="text-center text-sm text-gray-500">
-                            You've been reflecting on positive experiences often this month. Keep it up!
+                           {monthlyInsightMessage}
                         </p>
                     </section>
 
