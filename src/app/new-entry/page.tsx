@@ -317,7 +317,7 @@ export default function NewEntry() {
   };
 
   return (
-    <div className="h-screen w-full bg-[#E0D3AF] flex flex-col font-sans">
+    <div className="h-screen w-full bg-background flex flex-col font-sans">
       <div className="w-full max-w-2xl mx-auto flex flex-col flex-1">
         <div className="absolute top-0 left-0 right-0 h-1 bg-green-200">
           <motion.div
@@ -340,7 +340,7 @@ export default function NewEntry() {
          <Link href="/dashboard">
             <Button
               variant="outline"
-              className="rounded-full bg-white border-gray-200"
+              className="rounded-full bg-[#EAE8E1] border-gray-200"
             >
               <Clock className="w-4 h-4 mr-2" />
               {isClient && entryDate

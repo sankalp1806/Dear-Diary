@@ -149,8 +149,8 @@ export default function TimelinePage() {
 
 
   return (
-    <div className="h-screen w-full bg-gray-50 flex flex-col font-sans">
-      <header className="p-4 bg-gray-50 sticky top-0 z-10">
+    <div className="h-screen w-full bg-background flex flex-col font-sans">
+      <header className="p-4 bg-background sticky top-0 z-10">
         <div className="bg-white rounded-2xl p-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
              <Link href="/dashboard">
