@@ -19,6 +19,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { generatePromptsAction, getSentimentForEntry, continueConversationAction, getConversationSummaryAction } from '@/app/actions';
+import { ProvideEmotionalInsightsOutput } from '@/ai/flows/provide-emotional-insights';
 
 interface ChatMessage {
   sender: 'user' | 'ai';
@@ -35,7 +36,6 @@ export default function NewEntry() {
   const [isClient, setIsClient] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [currentInsights, setCurrentInsights] = useState<string[]>([]);
 
   const [promptsState, generatePromptsFormAction] = useActionState(
     generatePromptsAction,
@@ -158,12 +158,15 @@ export default function NewEntry() {
       ? conversation.map(m => `${m.sender === 'ai' ? 'AI' : 'Me'}: ${m.text}`).join('\n')
       : (content as string);
 
-    const analysisResult = await getSentimentForEntry(entryTextForAnalysis);
+    let analysisResult: (ProvideEmotionalInsightsOutput & { summary?: string, insights?: string[] }) | null = null;
+    if (entryTextForAnalysis) {
+        analysisResult = await getSentimentForEntry(entryTextForAnalysis);
+    }
+
     const primaryEmotion = analysisResult?.emotion || 'Neutral';
     const overallSentiment = analysisResult?.overallSentiment?.toLowerCase() || 'neutral';
-    const summary = analysisResult.summary;
-    const insights = analysisResult.insights;
-
+    const summary = analysisResult?.summary;
+    const insights = analysisResult?.insights;
 
     let mood_score = 4; // Default to neutral
     if (overallSentiment.includes('very positive')) {
@@ -249,13 +252,15 @@ export default function NewEntry() {
   const handleAiChatToggle = async () => {
     if (isViewMode) return;
     if (!isChatMode) {
-      setIsChatMode(true);
-      if (typeof content === 'string' && content.trim().length > 0) {
-        const entryText = content;
-        setContent('');
+      const entryText = typeof content === 'string' ? content.trim() : '';
+      if (entryText.length > 0) {
+        setIsChatMode(true);
+        setContent(''); // Clear the textarea content
         setIsAiTyping(true);
-        // 1. Process the diary entry to get insights for the conversation
-        await getSentimentForEntry(entryText); // This now calls the python backend and populates insights
+        
+        // 1. Process the diary entry to get insights. This is now done via the python backend
+        // and the insights are stored globally on the python server.
+        await getSentimentForEntry(entryText);
         
         // 2. Start the conversation
         const result = await continueConversationAction("Start the conversation based on the insights");
@@ -270,6 +275,7 @@ export default function NewEntry() {
             description: result.error || 'Could not start conversation.',
           });
           setIsChatMode(false); // Revert if AI fails
+          setContent(entryText); // Restore original content
         }
       } else {
         toast({
@@ -277,12 +283,12 @@ export default function NewEntry() {
           title: 'Entry is empty',
           description: 'Please write something in your journal before starting a chat.',
         });
-        setIsChatMode(false);
       }
     } else {
       setIsChatMode(false);
+      // Convert chat back to string for text area
       if (conversation.length > 0) {
-        setContent(conversation.map(m => `${m.sender === 'ai' ? 'AI' : 'Me'}: ${m.text}`).join('\n'));
+         setContent(conversation.map(m => `${m.sender === 'ai' ? 'AI' : 'Me'}: ${m.text}`).join('\n\n'));
       } else {
         setContent('');
       }
@@ -306,6 +312,7 @@ export default function NewEntry() {
 
     const result = await continueConversationAction(currentInput);
 
+    setIsAiTyping(false);
     if (result.success && result.data) {
       setConversation(prev => [...prev, { sender: 'ai', text: result.data!.reply }]);
     } else {
@@ -317,7 +324,6 @@ export default function NewEntry() {
       // remove the user message if AI fails
       setConversation(prev => prev.slice(0, prev.length - 1));
     }
-    setIsAiTyping(false);
   };
 
   return (
@@ -439,6 +445,7 @@ export default function NewEntry() {
               size="icon"
               className="bg-green-100 text-green-700 rounded-full w-10 h-10 hover:bg-green-200"
               onClick={handleSendOrSave}
+              disabled={isViewMode}
             >
               <ArrowRight className="w-6 h-6" />
             </Button>

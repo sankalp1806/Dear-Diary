@@ -92,9 +92,9 @@ export async function generatePromptsAction(
   }
 }
 
-export async function getSentimentForEntry(entryText: string): Promise<ProvideEmotionalInsightsOutput | { emotion: string, overallSentiment: string, summary?: string, insights?: string[] }> {
+export async function getSentimentForEntry(entryText: string): Promise<ProvideEmotionalInsightsOutput & { summary?: string, insights?: string[] }> {
     if (!entryText || entryText.length < 10) {
-        return { emotion: 'Neutral', overallSentiment: 'neutral' };
+        return { emotion: 'Neutral', overallSentiment: 'neutral', keyEmotions: [], emotionalPatterns: '', personalizedInsights: '' };
     }
     try {
         const analysis = await getEntryAnalysis({ entryText });
@@ -110,7 +110,7 @@ export async function getSentimentForEntry(entryText: string): Promise<ProvideEm
     } catch (error) {
         console.error("Error getting sentiment:", error);
         // Return neutral as a fallback
-        return { emotion: 'Neutral', overallSentiment: 'neutral' };
+        return { emotion: 'Neutral', overallSentiment: 'neutral', keyEmotions: [], emotionalPatterns: '', personalizedInsights: '' };
     }
 }
 
