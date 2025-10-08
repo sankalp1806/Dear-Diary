@@ -9,6 +9,7 @@ import { getNegativeSourceInsight } from '@/ai/flows/get-negative-source-insight
 import { getBadMoodTriggersInsight } from '@/ai/flows/get-bad-mood-triggers-insight';
 import { continueConversation } from '@/ai/flows/continue-conversation';
 import { summarizeConversation } from '@/ai/flows/summarize-conversation';
+import { getEntryAnalysis } from '@/ai/flows/get-entry-analysis';
 import type { AnalysisState, PromptsState } from '@/lib/types';
 
 const journalEntrySchema = z.object({
@@ -33,19 +34,26 @@ export async function analyzeEntryAction(
   }
 
   const entryText = validatedFields.data.entry;
-  const userId = 'user-123'; // Mock user ID for personalization
-
+  
   try {
-    const [categoriesResult, insightsResult] = await Promise.all([
-      categorizeJournalEntry({ entryText }),
-      provideEmotionalInsights({ journalEntry: entryText, userId }),
-    ]);
+    const analysisResult = await getEntryAnalysis({ entryText });
 
+    // The new flow gives us summary, insights, and emojis.
+    // We need to adapt this to the existing AnalysisState structure.
+    // We will use the first emoji as the primary emotion indicator and the summary.
+    const insights: ProvideEmotionalInsightsOutput = {
+      emotion: analysisResult.emojis[0] || 'Neutral',
+      overallSentiment: 'neutral', // This could be derived from the summary if needed.
+      keyEmotions: analysisResult.emojis,
+      emotionalPatterns: analysisResult.summary, // Using summary for patterns
+      personalizedInsights: analysisResult.insights.join('\n'),
+    };
+    
     return {
       success: true,
       data: {
-        categories: categoriesResult.categories,
-        insights: insightsResult,
+        categories: ['feelings'], // We can default this or enhance the python script
+        insights: insights,
       },
       error: null,
       timestamp: Date.now(),
@@ -84,16 +92,21 @@ export async function generatePromptsAction(
   }
 }
 
-export async function getSentimentForEntry(entryText: string): Promise<ProvideEmotionalInsightsOutput | { emotion: string, overallSentiment: string }> {
+export async function getSentimentForEntry(entryText: string): Promise<ProvideEmotionalInsightsOutput | { emotion: string, overallSentiment: string, summary?: string, insights?: string[] }> {
     if (!entryText || entryText.length < 10) {
         return { emotion: 'Neutral', overallSentiment: 'neutral' };
     }
     try {
-        const insights = await provideEmotionalInsights({
-            journalEntry: entryText,
-            userId: 'user-123', // Mock user ID
-        });
-        return insights;
+        const analysis = await getEntryAnalysis({ entryText });
+        return {
+            emotion: analysis.emojis[0] || 'Neutral',
+            overallSentiment: 'neutral', // You could refine this
+            summary: analysis.summary,
+            insights: analysis.insights,
+            keyEmotions: analysis.emojis,
+            emotionalPatterns: '',
+            personalizedInsights: analysis.insights.join('\n')
+        };
     } catch (error) {
         console.error("Error getting sentiment:", error);
         // Return neutral as a fallback
@@ -137,14 +150,14 @@ interface ChatMessage {
 }
 
 export async function continueConversationAction(
-  conversationHistory: ChatMessage[]
+  message: string
 ) {
   try {
-    const result = await continueConversation({ conversationHistory });
+    const result = await continueConversation({ message });
     return { success: true, data: result };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in continueConversationAction:", error);
-    return { success: false, error: "Failed to get AI response." };
+    return { success: false, error: error.message || "Failed to get AI response." };
   }
 }
 
@@ -155,8 +168,11 @@ export async function getConversationSummaryAction(
     if (conversation.length === 0) {
         return "Chat with AI";
     }
+    // The summary is now generated when the entry is processed.
+    // This function can be simplified or used to call a different summary endpoint if needed.
+    const userEntries = conversation.filter(m => m.sender === 'user').map(m => m.text).join('\n');
     try {
-        const result = await summarizeConversation({ conversation });
+        const result = await summarizeConversation({ conversation: userEntries });
         return result.summary;
     } catch (error) {
         console.error('Error summarizing conversation:', error);

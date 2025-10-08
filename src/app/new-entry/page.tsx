@@ -35,6 +35,7 @@ export default function NewEntry() {
   const [isClient, setIsClient] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [currentInsights, setCurrentInsights] = useState<string[]>([]);
 
   const [promptsState, generatePromptsFormAction] = useActionState(
     generatePromptsAction,
@@ -141,7 +142,14 @@ export default function NewEntry() {
     }
     const isContentEmpty = isChatMode ? conversation.length === 0 : !content;
 
-    if (isContentEmpty) {
+    if (isContentEmpty || (typeof content === 'string' && content.length < 10)) {
+      if (!isChatMode) {
+          toast({
+          variant: 'destructive',
+          title: 'Entry too short',
+          description: 'Journal entry must be at least 10 characters long.',
+        });
+      }
       return;
     }
     
@@ -150,9 +158,11 @@ export default function NewEntry() {
       ? conversation.map(m => `${m.sender === 'ai' ? 'AI' : 'Me'}: ${m.text}`).join('\n')
       : (content as string);
 
-    const sentimentResult = await getSentimentForEntry(entryTextForAnalysis);
-    const primaryEmotion = sentimentResult?.emotion || 'Neutral';
-    const overallSentiment = sentimentResult?.overallSentiment?.toLowerCase() || 'neutral';
+    const analysisResult = await getSentimentForEntry(entryTextForAnalysis);
+    const primaryEmotion = analysisResult?.emotion || 'Neutral';
+    const overallSentiment = analysisResult?.overallSentiment?.toLowerCase() || 'neutral';
+    const summary = analysisResult.summary;
+    const insights = analysisResult.insights;
 
 
     let mood_score = 4; // Default to neutral
@@ -175,18 +185,16 @@ export default function NewEntry() {
       const entryToEditId = localStorage.getItem('entryToEditId');
 
       if (entryToEditId && !isViewMode) {
-        const summary = isChatMode ? await getConversationSummaryAction(conversation) : undefined;
         // Update existing entry
         const updatedEntries = existingEntries.map((entry: any) => 
           entry.id === entryToEditId 
-            ? { ...entry, content: finalContent, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score, emotion: primaryEmotion, isChat: isChatMode, summary }
+            ? { ...entry, content: finalContent, entry_date: entryDate.toISOString(), sentiment: overallSentiment, mood_score, emotion: primaryEmotion, isChat: isChatMode, summary, insights }
             : entry
         );
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
         localStorage.removeItem('entryToEditId');
         localStorage.removeItem('entryToEdit');
       } else if (!isViewMode) {
-         const summary = isChatMode ? await getConversationSummaryAction(conversation) : undefined;
         // Add new entry
         const newEntry = {
           id: new Date().toISOString(),
@@ -198,6 +206,7 @@ export default function NewEntry() {
           category: 'feelings',
           isChat: isChatMode,
           summary,
+          insights,
         };
         const updatedEntries = [...existingEntries, newEntry];
         localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
@@ -241,14 +250,19 @@ export default function NewEntry() {
     if (isViewMode) return;
     if (!isChatMode) {
       setIsChatMode(true);
-      // if content is string, put it as first user message
-      if(typeof content === 'string' && content.trim().length > 0) {
-        const initialUserMessage = { sender: 'user', text: content as string };
-        setConversation([initialUserMessage]);
+      if (typeof content === 'string' && content.trim().length > 0) {
+        const entryText = content;
+        setContent('');
         setIsAiTyping(true);
-        const result = await continueConversationAction([initialUserMessage]);
-         if (result.success && result.data) {
-          setConversation(prev => [...prev, { sender: 'ai', text: result.data.response }]);
+        // 1. Process the diary entry to get insights for the conversation
+        await getSentimentForEntry(entryText); // This now calls the python backend and populates insights
+        
+        // 2. Start the conversation
+        const result = await continueConversationAction("Start the conversation based on the insights");
+        setIsAiTyping(false);
+
+        if (result.success && result.data) {
+          setConversation([{ sender: 'ai', text: result.data.reply }]);
         } else {
           toast({
             variant: 'destructive',
@@ -257,26 +271,16 @@ export default function NewEntry() {
           });
           setIsChatMode(false); // Revert if AI fails
         }
-        setIsAiTyping(false);
-        return;
-      }
-      setIsAiTyping(true);
-      // Start conversation
-      const result = await continueConversationAction([]);
-      if (result.success && result.data) {
-        setConversation(prev => [...prev, { sender: 'ai', text: result.data.response }]);
       } else {
         toast({
           variant: 'destructive',
-          title: 'AI Error',
-          description: result.error || 'Could not start conversation.',
+          title: 'Entry is empty',
+          description: 'Please write something in your journal before starting a chat.',
         });
         setIsChatMode(false);
       }
-      setIsAiTyping(false);
     } else {
       setIsChatMode(false);
-      // If there's a conversation, put it into the content
       if (conversation.length > 0) {
         setContent(conversation.map(m => `${m.sender === 'ai' ? 'AI' : 'Me'}: ${m.text}`).join('\n'));
       } else {
@@ -289,35 +293,35 @@ export default function NewEntry() {
     if (e && e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
     } else if (e) {
-      return; // Ignore other key presses unless it's a direct call
+      return;
     }
     
     if (!chatInput.trim() || isAiTyping || isViewMode) return;
 
     const newUserMessage: ChatMessage = { sender: 'user', text: chatInput };
-    const newConversation = [...conversation, newUserMessage];
-    setConversation(newConversation);
+    setConversation(prev => [...prev, newUserMessage]);
+    const currentInput = chatInput;
     setChatInput('');
     setIsAiTyping(true);
 
-    const result = await continueConversationAction(newConversation);
+    const result = await continueConversationAction(currentInput);
 
     if (result.success && result.data) {
-      setConversation(prev => [...prev, { sender: 'ai', text: result.data!.response }]);
+      setConversation(prev => [...prev, { sender: 'ai', text: result.data!.reply }]);
     } else {
       toast({
         variant: 'destructive',
         title: 'AI Error',
         description: result.error || 'Failed to get AI response.',
       });
-      // Optionally remove the user message if AI fails
-      setConversation(newConversation); 
+      // remove the user message if AI fails
+      setConversation(prev => prev.slice(0, prev.length - 1));
     }
     setIsAiTyping(false);
   };
 
   return (
-    <div className="h-screen w-full bg-background flex flex-col font-sans">
+    <div className="h-screen w-full bg-[#E0D3AF] flex flex-col font-sans">
       <div className="w-full max-w-2xl mx-auto flex flex-col flex-1">
         <div className="absolute top-0 left-0 right-0 h-1 bg-green-200">
           <motion.div
@@ -340,7 +344,7 @@ export default function NewEntry() {
          <Link href="/dashboard">
             <Button
               variant="outline"
-              className="rounded-full bg-[#EAE8E1] border-gray-200"
+              className="rounded-full bg-gray-200 border-gray-300"
             >
               <Clock className="w-4 h-4 mr-2" />
               {isClient && entryDate
@@ -366,7 +370,7 @@ export default function NewEntry() {
                 {conversation.map((msg, index) => (
                   <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
                     {msg.sender === 'ai' && <Bot className="w-6 h-6 text-gray-500 shrink-0" />}
-                    <div className={`p-3 rounded-lg max-w-md bg-card`}>
+                    <div className={`p-3 rounded-lg max-w-md bg-[#EAE8E1]`}>
                       <p className="text-black whitespace-pre-wrap">{msg.text}</p>
                     </div>
                     {msg.sender === 'user' && <User className="w-6 h-6 text-gray-500 shrink-0" />}
@@ -375,7 +379,7 @@ export default function NewEntry() {
                  {isAiTyping && (
                   <div className="flex items-start gap-3">
                     <Bot className="w-6 h-6 text-gray-500 shrink-0" />
-                    <div className="p-3 rounded-lg bg-card">
+                    <div className="p-3 rounded-lg bg-[#EAE8E1]">
                       <p className="text-gray-500 italic">typing...</p>
                     </div>
                   </div>
@@ -406,7 +410,7 @@ export default function NewEntry() {
             </form>
           )}
 
-          <div className={`bg-secondary rounded-full shadow-lg p-2 flex items-center justify-around mt-3 ${isViewMode ? 'hidden' : ''}`}>
+          <div className={`bg-white rounded-full shadow-lg p-2 flex items-center justify-around mt-3 ${isViewMode ? 'hidden' : ''}`}>
             <Link href="/voice-chat">
               <Button variant="ghost" size="icon" className="text-gray-600">
                 <Mic className="w-6 h-6" />

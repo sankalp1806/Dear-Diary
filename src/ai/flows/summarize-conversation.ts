@@ -10,13 +10,8 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const ChatMessageSchema = z.object({
-    sender: z.enum(['user', 'ai']),
-    text: z.string(),
-});
-
 const SummarizeConversationInputSchema = z.object({
-  conversation: z.array(ChatMessageSchema).describe('The conversation to summarize.'),
+  conversation: z.string().describe('The conversation to summarize.'),
 });
 export type SummarizeConversationInput = z.infer<
   typeof SummarizeConversationInputSchema
@@ -45,9 +40,7 @@ const prompt = ai.definePrompt({
 Given the following chat conversation between a user and an AI, provide a short, one-sentence summary.
 
 Conversation History:
-{{#each conversation}}
-{{this.sender}}: {{{this.text}}}
-{{/each}}
+{{{conversation}}}
 
 Summary:`,
 });
