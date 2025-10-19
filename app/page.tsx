@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useMotionValue, AnimatePresence } from 'framer-motion';
 
@@ -9,11 +9,10 @@ const greetings = [
   "I'm all ears.. Tell me your today's secret.",
 ];
 
-// @ts-ignore
-const Spline = ({ url }) => {
+// Memoized Spline component to prevent re-renders
+const SplineViewer = memo(function SplineViewer({ url }: { url: string }) {
   // Since spline-viewer is a custom element, we render it as a div
   // and set its content using dangerouslySetInnerHTML.
-  // This is a common pattern for integrating non-React web components.
   return (
     <div
       dangerouslySetInnerHTML={{
@@ -21,8 +20,7 @@ const Spline = ({ url }) => {
       }}
     />
   );
-};
-
+});
 
 export default function Landing() {
   const router = useRouter();
@@ -40,9 +38,7 @@ export default function Landing() {
     document.head.appendChild(script);
 
     // This effect should only run on the client
-    if (typeof window !== 'undefined') {
-        setDragConstraints({ top: -window.innerHeight, bottom: 0 });
-    }
+    setDragConstraints({ top: -window.innerHeight, bottom: 0 });
 
     const greetingInterval = setInterval(() => {
       setGreetingIndex((prevIndex) => (prevIndex + 1) % greetings.length);
@@ -50,7 +46,9 @@ export default function Landing() {
 
     return () => {
       clearInterval(greetingInterval);
-      document.head.removeChild(script);
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
     };
   }, []);
 
@@ -99,7 +97,7 @@ export default function Landing() {
                   exit={{ opacity: 0, scale: 0.5 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <Spline url="https://prod.spline.design/pgwuUKNsLw1R4xtu/scene.splinecode" />
+                  <SplineViewer url="https://prod.spline.design/pgwuUKNsLw1R4xtu/scene.splinecode" />
                 </motion.div>
               </AnimatePresence>
             )}
