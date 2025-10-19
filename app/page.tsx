@@ -21,6 +21,8 @@ const SplineViewer = memo(function SplineViewer({ url }: { url: string }) {
     />
   );
 });
+SplineViewer.displayName = 'SplineViewer';
+
 
 export default function Landing() {
   const router = useRouter();
@@ -41,6 +43,21 @@ export default function Landing() {
       clearInterval(greetingInterval);
     };
   }, []);
+  
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = 'https://unpkg.com/@splinetool/viewer@1.10.82/build/spline-viewer.js';
+    script.async = true;
+    script.onload = () => setIsScriptLoaded(true);
+    document.head.appendChild(script);
+
+    return () => {
+      // Clean up the script when the component unmounts
+      document.head.removeChild(script);
+    };
+  }, []);
+
 
   const handleDragEnd = (event: any, info: any) => {
     if (info.offset.y < -50) {
@@ -50,10 +67,6 @@ export default function Landing() {
 
   return (
     <>
-      {/* Preload the spline viewer script for faster loading */}
-      <link rel="preload" href="https://unpkg.com/@splinetool/viewer@1.10.82/build/spline-viewer.js" as="script" />
-      <script type="module" src="https://unpkg.com/@splinetool/viewer@1.10.82/build/spline-viewer.js" async onLoad={() => setIsScriptLoaded(true)}></script>
-
       <div className="h-screen w-full relative overflow-hidden bg-gradient-to-br from-amber-100 via-orange-200 to-blue-200">
         <motion.div
           className="h-full w-full absolute top-0 left-0 cursor-grab flex flex-col items-center justify-center text-center"
