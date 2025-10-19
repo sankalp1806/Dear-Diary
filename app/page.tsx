@@ -9,16 +9,36 @@ const greetings = [
   "I'm all ears.. Tell me your today's secret.",
 ];
 
-const characters = ['✍️', '🧘', '🤗', '🤔', '😌'];
+// @ts-ignore
+const Spline = ({ url }) => {
+  // Since spline-viewer is a custom element, we render it as a div
+  // and set its content using dangerouslySetInnerHTML.
+  // This is a common pattern for integrating non-React web components.
+  return (
+    <div
+      dangerouslySetInnerHTML={{
+        __html: `<spline-viewer url="${url}"></spline-viewer>`,
+      }}
+    />
+  );
+};
+
 
 export default function Landing() {
   const router = useRouter();
   const y = useMotionValue(0);
   const [greetingIndex, setGreetingIndex] = useState(0);
-  const [characterIndex, setCharacterIndex] = useState(0);
   const [dragConstraints, setDragConstraints] = useState({ top: 0, bottom: 0 });
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
   useEffect(() => {
+    // Dynamically load the Spline viewer script
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = 'https://unpkg.com/@splinetool/viewer@1.10.82/build/spline-viewer.js';
+    script.onload = () => setIsScriptLoaded(true);
+    document.head.appendChild(script);
+
     // This effect should only run on the client
     if (typeof window !== 'undefined') {
         setDragConstraints({ top: -window.innerHeight, bottom: 0 });
@@ -28,13 +48,9 @@ export default function Landing() {
       setGreetingIndex((prevIndex) => (prevIndex + 1) % greetings.length);
     }, 4000);
 
-    const characterInterval = setInterval(() => {
-      setCharacterIndex((prevIndex) => (prevIndex + 1) % characters.length);
-    }, 3000);
-
     return () => {
       clearInterval(greetingInterval);
-      clearInterval(characterInterval);
+      document.head.removeChild(script);
     };
   }, []);
 
@@ -73,33 +89,22 @@ export default function Landing() {
             </AnimatePresence>
           </div>
 
-          {/* Animated Character */}
-          <motion.div
-            className="my-12"
-            animate={{
-              y: [0, -15, 0, 15, 0],
-              scale: [1, 1.05, 1, 0.95, 1],
-              rotate: [0, 3, -3, 3, 0],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          >
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={characterIndex}
-                className="text-8xl"
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
-                transition={{ duration: 0.5 }}
-              >
-                {characters[characterIndex]}
-              </motion.span>
-            </AnimatePresence>
-          </motion.div>
+          {/* Spline 3D Model */}
+          <div className="w-full h-96 my-12">
+            {isScriptLoaded && (
+              <AnimatePresence>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Spline url="https://prod.spline.design/pgwuUKNsLw1R4xtu/scene.splinecode" />
+                </motion.div>
+              </AnimatePresence>
+            )}
+          </div>
+          
 
           {/* Swipe Up Indicator */}
           <motion.div
