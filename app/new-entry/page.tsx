@@ -240,14 +240,15 @@ export default function NewEntry() {
   const handleAiChatToggle = async () => {
     if (isViewMode) return;
     if (!isChatMode) {
-      setIsChatMode(true);
-      // if content is string, put it as first user message
-      if(typeof content === 'string' && content.trim().length > 0) {
-        const initialUserMessage = { sender: 'user', text: content as string };
-        setConversation([initialUserMessage]);
+      const entryText = typeof content === 'string' ? content.trim() : '';
+      if (entryText) {
+        setIsChatMode(true);
+        setContent(''); // Clear the textarea content
+        setConversation([]);
         setIsAiTyping(true);
-        const result = await continueConversationAction([initialUserMessage]);
-         if (result.success && result.data) {
+        const result = await continueConversationAction(entryText);
+        setIsAiTyping(false);
+        if (result.success && result.data) {
           setConversation(prev => [...prev, { sender: 'ai', text: result.data.response }]);
         } else {
           toast({
@@ -256,24 +257,15 @@ export default function NewEntry() {
             description: result.error || 'Could not start conversation.',
           });
           setIsChatMode(false); // Revert if AI fails
+          setContent(entryText); // Restore original content
         }
-        setIsAiTyping(false);
-        return;
-      }
-      setIsAiTyping(true);
-      // Start conversation
-      const result = await continueConversationAction([]);
-      if (result.success && result.data) {
-        setConversation(prev => [...prev, { sender: 'ai', text: result.data.response }]);
       } else {
         toast({
           variant: 'destructive',
-          title: 'AI Error',
-          description: result.error || 'Could not start conversation.',
+          title: 'Entry is empty',
+          description: 'Please write something in your journal before starting a chat.',
         });
-        setIsChatMode(false);
       }
-      setIsAiTyping(false);
     } else {
       setIsChatMode(false);
       // If there's a conversation, put it into the content
@@ -286,34 +278,12 @@ export default function NewEntry() {
   };
 
   const handleChatSubmit = async (e?: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e && e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-    } else if (e) {
-      return; // Ignore other key presses unless it's a direct call
-    }
-    
-    if (!chatInput.trim() || isAiTyping || isViewMode) return;
-
-    const newUserMessage: ChatMessage = { sender: 'user', text: chatInput };
-    const newConversation = [...conversation, newUserMessage];
-    setConversation(newConversation);
-    setChatInput('');
-    setIsAiTyping(true);
-
-    const result = await continueConversationAction(newConversation);
-
-    if (result.success && result.data) {
-      setConversation(prev => [...prev, { sender: 'ai', text: result.data!.response }]);
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'AI Error',
-        description: result.error || 'Failed to get AI response.',
-      });
-      // Optionally remove the user message if AI fails
-      setConversation(newConversation); 
-    }
-    setIsAiTyping(false);
+    // This function is no longer needed since the python backend doesn't support follow-up messages
+    // with the current '/response' endpoint.
+    toast({
+        title: "Chat Inactive",
+        description: "This chat is for initial response only. To chat again, please start a new entry.",
+    });
   };
 
   return (
@@ -389,13 +359,13 @@ export default function NewEntry() {
            {isChatMode ? (
              <div className={`bg-card rounded-lg shadow-lg p-2 flex items-center ${isViewMode ? 'hidden' : ''}`}>
                  <Textarea
-                    placeholder="Message your AI friend..."
+                    placeholder="This chat is read-only."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={handleChatSubmit}
                     className="flex-1 bg-transparent border-none outline-none resize-none p-2 focus-visible:ring-0 placeholder:text-gray-400 text-black"
                     rows={1}
-                    readOnly={isViewMode}
+                    readOnly={true}
                 />
               </div>
           ) : (

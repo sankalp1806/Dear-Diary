@@ -11,14 +11,14 @@ import {z} from 'genkit';
 const FASTAPI_URL = 'http://127.0.0.1:8000';
 
 const ContinueConversationInputSchema = z.object({
-  message: z.string(),
+  userInput: z.string().describe('The initial journal entry to start the conversation.'),
 });
 export type ContinueConversationInput = z.infer<
   typeof ContinueConversationInputSchema
 >;
 
 const ContinueConversationOutputSchema = z.object({
-  reply: z.string().describe("The AI's response to continue the conversation."),
+  response: z.string().describe("The AI's response to start the conversation."),
 });
 
 export type ContinueConversationOutput = z.infer<
@@ -29,12 +29,12 @@ export async function continueConversation(
   input: ContinueConversationInput
 ): Promise<ContinueConversationOutput> {
   try {
-    const response = await fetch(`${FASTAPI_URL}/chat`, {
+    const formData = new FormData();
+    formData.append('user_input', input.userInput);
+
+    const response = await fetch(`${FASTAPI_URL}/response`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ message: input.message }),
+      body: formData,
     });
 
     if (!response.ok) {
@@ -43,10 +43,13 @@ export async function continueConversation(
     }
     
     const result = await response.json();
-    return ContinueConversationOutputSchema.parse(result);
+    
+    // The python script returns a raw string, not a JSON object.
+    // So we wrap it in the expected output schema.
+    return ContinueConversationOutputSchema.parse({ response: result });
 
   } catch (e: any) {
-    console.error("Error calling FastAPI /chat endpoint:", e);
+    console.error("Error calling FastAPI /response endpoint:", e);
     // If the server isn't running, provide a helpful message.
     if (e.cause?.code === 'ECONNREFUSED') {
        throw new Error("Could not connect to the AI chat service. Please ensure the Python server is running.");
