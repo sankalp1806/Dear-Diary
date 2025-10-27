@@ -2,6 +2,7 @@
 import { useState, useEffect, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useMotionValue, AnimatePresence } from 'framer-motion';
+import Head from 'next/head';
 
 const greetings = [
   "What's on your Mind Today?",
@@ -50,11 +51,13 @@ export default function Landing() {
     script.src = 'https://unpkg.com/@splinetool/viewer@1.10.82/build/spline-viewer.js';
     script.async = true;
     script.onload = () => setIsScriptLoaded(true);
-    document.head.appendChild(script);
+    document.body.appendChild(script);
 
     return () => {
       // Clean up the script when the component unmounts
-      document.head.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
@@ -67,6 +70,9 @@ export default function Landing() {
 
   return (
     <>
+      <Head>
+        <link rel="preload" href="https://unpkg.com/@splinetool/viewer@1.10.82/build/spline-viewer.js" as="script" />
+      </Head>
       <div className="h-screen w-full relative overflow-hidden bg-gradient-to-br from-amber-100 via-orange-200 to-blue-200">
         <motion.div
           className="h-full w-full absolute top-0 left-0 cursor-grab flex flex-col items-center justify-center text-center"
